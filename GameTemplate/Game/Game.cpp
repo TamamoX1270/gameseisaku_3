@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "Player.h"
 #include "Wall.h"
+#include "Wallbreak.h"
 #include "Enemy.h"
 #include "BackGround.h"
 #include "GameCamera.h"
@@ -10,7 +11,8 @@
 
 bool Game::Start()
 {
-	m_wall = NewGO<Wall>(0, "wall");
+	//m_wall = NewGO<Wall>(0, "wall");
+	m_wallbreak = NewGO<Wallbreak>(0, "wallbreak");
 	m_player = NewGO<Player>(0, "player");
 	m_backGround = NewGO<BackGround>(0, "backGround");
 	m_gameCamera = NewGO<GameCamera>(0, "gamecamera");

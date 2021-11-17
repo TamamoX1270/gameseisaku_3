@@ -4,6 +4,7 @@
 
 class Player;
 class Wall;
+class Wallbreak;
 class BackGround;
 class GameCamera;
 
@@ -15,13 +16,12 @@ public:
 	bool Start();
 	void Update();
 	void Render(RenderContext& rc);
-
-	Player* m_player;                              //プレイヤー。
-	Wall* m_wall;                              //壁。
-	GameCamera* m_gameCamera;                       //ゲームカメラ
-	BackGround* m_backGround;                     //背景。
-
 private:
+	Player* m_player;                              //プレイヤー。
+	Wall* m_wall;                                  //壁。
+	Wallbreak* m_wallbreak;                                  //壁。
+	GameCamera* m_gameCamera;                      //ゲームカメラ
+	BackGround* m_backGround;                     //背景。
 	ModelRender m_modelRender;
 };
 

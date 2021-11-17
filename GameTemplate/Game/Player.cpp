@@ -61,7 +61,7 @@ bool Player::Start()
 	m_sphereCollider.Create(48.0f);
 
 	//キャラコンを初期化する。
-	characterController.Init(25.0f, 25.0f, m_position);
+	m_characterController.Init(25.0f, 25.0f, m_position);
 
 	return true;
 }
@@ -123,7 +123,7 @@ void Player::Move()
 	m_moveSpeed += right + forward;
 
 	//キャラクターコントローラーを使って座標を移動させる。
-	m_position = characterController.Execute(m_moveSpeed, 1.0f / 60.0f);
+	m_position = m_characterController.Execute(m_moveSpeed, 1.0f / 60.0f);
 
 	//白の世界の時かつ白のチェンジステートがtrueかつLB2を押されたら
 	if (g_pad[0]->IsTrigger(enButtonLB2)&& worldstate==0 && whiteChangestate == true)
@@ -134,8 +134,6 @@ void Player::Move()
 		blacktimer = 0.0f;
 		//黒のチェンジステートをfalseにする。
 		blackChangestate = false;
-
-		m_wall = NewGO<Wall>(0, "wall");
 	}
 	//黒の世界の時かつ黒のチェンジステートがtrueかつLB2を押されたら
 	if (g_pad[0]->IsTrigger(enButtonLB1) && worldstate == 1&& blackChangestate ==true )

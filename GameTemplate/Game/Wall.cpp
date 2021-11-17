@@ -4,6 +4,7 @@
 
 Wall::Wall()
 {
+
 }
 
 Wall::~Wall()
@@ -25,12 +26,12 @@ bool  Wall::Start()
 
 void Wall::GetWorld()
 {
-	if (FindGO<Player>("player")->worldstate == 0 && createstate == false)
+	if (FindGO<Player>("player")->GetWorldState() == 0 && createstate == false)
 	{
 		createstate = true;
 		Create();
 	}
-	else if (FindGO<Player>("player")->worldstate == 1)
+	else if (FindGO<Player>("player")->GetWorldState() == 1)
 	{
 		m_physicsStaticObject.Release();
 		createstate = false;
@@ -41,6 +42,7 @@ void Wall::Create()
 {
 	if (createstate == true)
 	{
+		
 		//PhysicsStaticObject‚ğ‰Šú‰»B
 		m_physicsStaticObject.CreateFromModel(
 			m_wall.GetModel(),
@@ -57,7 +59,7 @@ void  Wall::Update()
 
 void  Wall::Render(RenderContext& rc)
 {
-	if (FindGO<Player>("player")->worldstate == 0)
+	if (FindGO<Player>("player")->GetWorldState() == 0)
 	{
 		m_wall.Draw(rc);    //ƒ‚ƒfƒ‹‚ğ•`‰æ‚·‚éB
 	}

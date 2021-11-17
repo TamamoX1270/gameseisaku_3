@@ -79,7 +79,14 @@ public:
 	{
 		return m_position;
 	}
-
+	const int GetWorldState() const
+	{
+		return worldstate;
+	}
+	const CharacterController&GetCharacon() const
+	{
+		m_characterController;
+	}
 	enum EnPlayerState {
 		enPlayerState_Idle,					//待機。
 		enPlayerState_Walk,					//歩き。
@@ -93,6 +100,7 @@ public:
 		enPlayerState_Clear					//クリアー。
 	};
 
+private:
 	enum EnAnimationClip {
 		enAnimationClip_Idle,				//待機アニメーション。	
 		enAnimationClip_Walk,				//歩きアニメーション。
@@ -116,7 +124,7 @@ public:
 	FontRender m_fontRender5;                         //文字の描画
 	EnPlayerState m_playerState = enPlayerState_Idle;	//プレイヤーのステート(状態)を表す変数。
 
-	CharacterController characterController;       //キャラクターコントローラー。
+	CharacterController m_characterController;       //キャラクターコントローラー。
 	SphereCollider m_sphereCollider;		      //円型のコライダー。
 	Vector3 m_position;			                 //座標。
 	Vector3 m_position2;			             //座標2。
@@ -125,7 +133,6 @@ public:
 	ModelRender m_modelRender;             //モデルレンダー
 	ModelRender m_modelRender2;             //モデルレンダー2
 	Vector3 m_forward;                    //キャラクターの前方向のベクトル
-	Wall* m_wall;                              //壁。
 
 	float whitetimer = 0.0f;
 	float blacktimer = 0.0f;

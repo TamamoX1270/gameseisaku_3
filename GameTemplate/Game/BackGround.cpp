@@ -32,11 +32,11 @@ bool BackGround::Start()
 }
 void BackGround::Render(RenderContext& rc)
 {
-	if (FindGO<Player>("player")->worldstate == 0)
+	if (FindGO<Player>("player")->GetWorldState() == 0)
 	{
 		m_backGround.Draw(rc);
 	}
-	if (FindGO<Player>("player")->worldstate == 1)
+	if (FindGO<Player>("player")->GetWorldState() == 1)
 	{
 		m_backGround2.Draw(rc);
 	}

@@ -7,6 +7,7 @@ public:
 	bool Start();
 	void Render(RenderContext& rc);
 
+private:
 	ModelRender m_backGround;                    //モデルレンダ―。
 	ModelRender m_backGround2;                    //モデルレンダ―。
 	PhysicsStaticObject m_physicsStaticObject;  //静的物理オブジェクト。

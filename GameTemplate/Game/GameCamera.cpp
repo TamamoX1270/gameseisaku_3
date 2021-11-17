@@ -20,7 +20,7 @@ void GameCamera::Update()
 {
 	//カメラを更新。
 	//注視点を計算する。
-	Vector3 target = m_player->m_position;
+	Vector3 target = m_player->GetPosition();
 	//プレイヤの足元からちょっと上を注視点とする。
 	target.y += 80.0f;
 
@@ -30,7 +30,7 @@ void GameCamera::Update()
 	float y = g_pad[0]->GetRStickYF();
 	//Y軸周りの回転
 	Quaternion qRot;
-	qRot.SetRotationDeg(Vector3::AxisY, 1.3f * x);
+	qRot.SetRotationDeg(Vector3::AxisY, 5.3f * x);
 	qRot.Apply(m_toCameraPos);
 	//X軸周りの回転。
 	Vector3 axisX;

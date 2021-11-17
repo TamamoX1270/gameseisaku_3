@@ -1,4 +1,7 @@
 #pragma once
+
+class Player;
+
 class Enemy : public IGameObject
 {
 public:
@@ -7,22 +10,105 @@ public:
     bool Start();
     void Update();                                    //更新処理
     void Render(RenderContext& rc);                  //描画関数。
-    void Move();                                    //移動処理
-    void Rotation();                               //回転処理
+    void Rotation();                                 //回転処理
+    void Chase();
     void ProcessEnemyHit();                        //攻撃の当たった判定の処理
+    //攻撃処理
+    void Attack();
+    /// <summary>
+    /// エネミーの攻撃との当たり判定処理。
+    /// </summary>
+    void Collision();
+    /// <summary>
+    /// プレイヤーを探索する。
+    /// </summary>
+    /// <returns>プレイヤーが見つかったらtrue。</returns>
+    const bool SearchPlayer() const;
+    //攻撃の際の当たり判定用のコリジョンを作成する。
+    void MakeAttackCollision();
+    //共通のステート遷移処理。
+    void ProcessCommonStateTransition();
+    /// <summary>
+    /// 待機ステートの遷移処理。
+    /// </summary>
+    void ProcessIdleStateTransition();
+    /// <summary>
+    /// 歩きステートの遷移処理。
+    /// </summary>
+    void ProcessWalkStateTransition();
+    /// <summary>
+    /// 走りステートの遷移処理。
+    /// </summary>
+    void ProcessRunStateTransition();
+    /// <summary>
+    /// 攻撃ステートの遷移処理。
+    /// </summary>
+    void ProcessAttackStateTransition();
+    //アニメーションの再生
+    void PlayAnimation();
+    // アニメーションイベント用の関数。
+    void OnAnimationEvent(const wchar_t* clipName, const wchar_t* eventName);
+    //ステート管理。
+    void ManageState();
+    /// <summary>
+    /// 追跡ステートの背遷移処理。
+    /// </summary>
+    void ProcessChaseStateTransition();
+    /// <summary>
+    /// 攻撃できる距離かどうか調べる。
+    /// </summary>
+    /// <returns>攻撃できるならtrue。</returns>
+    const bool IsCanAttack() const;
 
-    CharacterController m_characterController;                 //キャラクターコントローラー。
-    ModelRender m_enemy;                                      //モデルレンダー
-    //SphereCollider m_sphereCollider;		                //円型のコライダー。
-    Vector3					m_position;			   		  //座標。
-    Vector3					m_scale;			         //大きさ。
-    Vector3                 m_moveSpeed;                   //移動速度。
-    Vector3                 m_positionlength;             //位置の長さ
-    Vector3                 m_playerposition;            //プレイヤーの位置
-    Vector3					m_forward = Vector3::AxisZ; //エネミーの正面ベクトル。
-    Quaternion				m_rotation;			     //回転。
-    PhysicsStaticObject		m_physicsStaticObject;  //静的物理オブジェクト。
+    void SetPosition(const Vector3& position)
+    {
+        m_position = position;
+    }
+    void SetRotation(const Quaternion& rotation)
+    {
+        m_rotation = rotation;
+    }
+    const Vector3& GetPosition() const
+    {
+        return m_position;
+    }
+    enum EnEnemyState {
+        enEnemyState_Idle,					//待機。
+        enEnemyState_Chase,					//追跡。
+        enEnemyState_Attack,				//攻撃。
+        enEnemyState_MagicAttack,			//魔法攻撃。
+        enEnemyState_ReceiveDamage,			//被ダメージ。
+        enEnemyState_Down,					//ダウン。
+    };
 
 private:
+    enum EnAnimationClip {
+        enAnimationClip_Idle,					//待機アニメーション。
+        enAnimationClip_Walk,					//歩きアニメーション。
+        enAnimationClip_Run,					//走りアニメーション。
+        enAnimationClip_Attack,					//攻撃アニメーション。
+        enAnimationClip_MagicAttack,			//魔法攻撃アニメーション。
+        enAnimationClip_Damage,					//被ダメージアニメーション。
+        enAnimationClip_Down,					//ダウンアニメーション。
+        enAnimationClip_Num,					//アニメーションの数。
+    };
+
+    AnimationClip				m_animationClips[enAnimationClip_Num];		//アニメーションクリップ。
+    CharacterController m_charaCon;                                         //キャラクターコントローラー。
+    ModelRender m_enemy;                                                    //モデルレンダー
+    EnEnemyState			m_enemyState = enEnemyState_Idle;		    	//エネミーステート。
+    Vector3					m_position;			   		    //座標。
+    Vector3					m_scale;			            //大きさ。
+    Vector3                 m_moveSpeed;                    //移動速度。
+    Vector3                 m_playerposition;               //プレイヤーの位置
+    Vector3					m_forward = Vector3::AxisZ;     //エネミーの正面ベクトル。
+    Quaternion				m_rotation;			            //回転。
+    PhysicsStaticObject		m_physicsStaticObject;          //静的物理オブジェクト。
     CollisionObject* m_collisionObject;
+
+    bool m_isUnderAttack = false;					        //攻撃中ならtrue。
+    int m_attackstate = false;
+    Player* m_player = nullptr;						     	//プレイヤー。
+    float						m_chaseTimer = 0.0f;        //追跡タイマー。
+    float						m_idleTimer = 0.0f;		    //待機タイマー。
 };
