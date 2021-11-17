@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "BackGround.h"
-#include "Player.h"
+#include "Game.h"
 
 BackGround::BackGround()
 {
@@ -32,11 +32,11 @@ bool BackGround::Start()
 }
 void BackGround::Render(RenderContext& rc)
 {
-	if (FindGO<Player>("player")->GetWorldState() == 0)
+	if (FindGO<Game>("game")->GetWorldState() == 0)
 	{
 		m_backGround.Draw(rc);
 	}
-	if (FindGO<Player>("player")->GetWorldState() == 1)
+	if (FindGO<Game>("game")->GetWorldState() == 1)
 	{
 		m_backGround2.Draw(rc);
 	}

@@ -3,57 +3,69 @@
 #include "Player.h"
 #include "Game.h"
 
+#include <time.h>
+#include <stdlib.h>
+
 //CollisionObjectを使用するために、ファイルをインクルードする。
 #include "collision/CollisionObject.h"
 
 bool Enemy::Start()
 {
 	//アニメーションを読み込む
-	m_animationClips[enAnimationClip_Idle].Load("Assets/animData/mutant/idle.tka");
+	m_animationClips[enAnimationClip_Idle].Load("Assets/animData/vampire/Idle.tka");
 	m_animationClips[enAnimationClip_Idle].SetLoopFlag(true);
-	m_animationClips[enAnimationClip_Walk].Load("Assets/animData/mutant/MutantWalking.tka");
+	m_animationClips[enAnimationClip_Walk].Load("Assets/animData/vampire/Walk.tka");
 	m_animationClips[enAnimationClip_Walk].SetLoopFlag(true);
-	/*
-	m_animationClips[enAnimationClip_Run].Load("Assets/animData/mutant/Run.tka");
+	m_animationClips[enAnimationClip_Run].Load("Assets/animData/vampire/Run.tka");
 	m_animationClips[enAnimationClip_Run].SetLoopFlag(true);
-	m_animationClips[enAnimationClip_Attack1].Load("Assets/animData/mutant/attack.tka");
+	m_animationClips[enAnimationClip_Attack1].Load("Assets/animData/vampire/attack.tka");
 	m_animationClips[enAnimationClip_Attack1].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_Attack2].Load("Assets/animData/mutant/attack2.tka");
+	m_animationClips[enAnimationClip_Attack2].Load("Assets/animData/vampire/attack2.tka");
 	m_animationClips[enAnimationClip_Attack2].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_Attack3].Load("Assets/animData/mutant/attack3.tka");
+	/*
+	m_animationClips[enAnimationClip_Attack3].Load("Assets/animData/vampire/attack3.tka");
 	m_animationClips[enAnimationClip_Attack3].SetLoopFlag(false);
 	*/
 	/*
-	m_animationClips[enAnimationClip_MagicAttack].Load("Assets/animData/mutant/magicattack.tka");
+	m_animationClips[enAnimationClip_MagicAttack].Load("Assets/animData/vampire/magicattack.tka");
 	m_animationClips[enAnimationClip_MagicAttack].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_HitDamage].Load("Assets/animData/mutant/receivedamage.tka");
+	m_animationClips[enAnimationClip_HitDamage].Load("Assets/animData/vampire/receivedamage.tka");
 	m_animationClips[enAnimationClip_HitDamage].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_Down].Load("Assets/animData/mutant/down.tka");
+	m_animationClips[enAnimationClip_Down].Load("Assets/animData/vampire/down.tka");
 	m_animationClips[enAnimationClip_Down].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_Winner].Load("Assets/animData/mutant/winner.tka");
+	m_animationClips[enAnimationClip_Winner].Load("Assets/animData/vampire/winner.tka");
 	m_animationClips[enAnimationClip_Winner].SetLoopFlag(false);
 	*/
 
 	//敵のモデルを読み込む
-	m_enemy.Init("Assets/modelData/mutant.tkm");
+	m_enemy.Init("Assets/modelData/vampire.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
 	//座標を設定する。
 	Vector3 position = m_position;
 	position.z = 200.0f;
 	m_enemy.SetPosition(position);
-	m_enemy.SetScale({ 10.0f,10.0f,10.0f });
+	m_enemy.SetScale({ 8.0f,8.0f,8.0f });
 	m_enemy.SetScale(Vector3::One * 2.5f);
 	//回転を設定する。
 	m_enemy.SetRotation(m_rotation);
 	m_enemy.Update();
-
 	//キャラクターコントローラーを初期化。
 	m_charaCon.Init(
-		20.0f,			//半径。
-		100.0f,			//高さ。
+		25.0f,			//半径。
+		160.0f,			//高さ。
 		position		//座標。
 	);
 
 	m_player = FindGO<Player>("player");
+
+	//乱数を初期化。
+	srand((unsigned)time(NULL));
+	m_forward = Vector3::AxisZ;
+	m_rotation.Apply(m_forward);
+
+	//「LeftHand」ボーンのID(番号)を取得する。
+	m_LeftHandId = m_enemy.FindBoneID(L"LeftHand");
+	//「RightHand」ボーンのID(番号)を取得する。
+	m_RightHandId = m_enemy.FindBoneID(L"RightHand");
 
 	//アニメーションイベント用の関数を設定する。
 	m_enemy.AddAnimationEvent([&](const wchar_t* clipName, const wchar_t* eventName) {
@@ -92,29 +104,6 @@ void Enemy::OnAnimationEvent(const wchar_t* clipName, const wchar_t* eventName)
 	if (wcscmp(eventName, L"attack_start") == 0) {
 		//攻撃中判定をtrueにする。
 		m_isUnderAttack = true;
-		//効果音を再生する。
-		SoundSource* se = NewGO<SoundSource>(0);
-		se->Init(3);
-		se->Play(false);
-		se->SetVolume(0.8f);
-
-		//攻撃エフェクトを発生させる。
-		EffectEmitter* effectEmitter = NewGO<EffectEmitter>(0);
-		effectEmitter->Init(1);
-		//大きさを設定する。
-		effectEmitter->SetScale(Vector3::One * 12.0f);
-		Vector3 effectPosition = m_position;
-		//座標を少し上にする。
-		effectPosition.y += 70.0f;
-		//座標を設定する。
-		effectEmitter->SetPosition(effectPosition);
-		Quaternion rotation;
-		rotation = m_rotation;
-		rotation.AddRotationDegY(360.0f);
-		//回転を設定する。
-		effectEmitter->SetRotation(rotation);
-		//エフェクトを再生する。
-		effectEmitter->Play();
 	}
 	//キーの名前が「attack_end」の時。
 	else if (wcscmp(eventName, L"attack_end") == 0) {
@@ -209,17 +198,35 @@ void Enemy::Collision()
 
 void Enemy::Attack()
 {
-	//攻撃ステートでないなら処理をしない。
-	if (m_enemyState != enEnemyState_Attack)
+	
+	if (m_enemyattackmotion == 1)
 	{
-		return;
+	    //攻撃ステートでないなら処理をしない。
+		if (m_enemyState != enEnemyState_Attack1)
+		{
+			m_enemyattackmotion = 0;
+			return;
+		}
+	}
+	else if (m_enemyattackmotion == 0)
+	{
+		//攻撃中でないなら、処理をしない。
+		if (m_enemyState != enEnemyState_Attack2)
+		{
+			return;
+		}
 	}
 
 	//攻撃中であれば。
-	if (m_isUnderAttack == true)
+	if (m_isUnderAttack == true && m_enemyattackmotion == 1)
 	{
 		//攻撃用のコリジョンを作成する。
 		MakeAttackCollision();
+	}
+	if (m_isUnderAttack == true && m_enemyattackmotion == 0)
+	{
+		//攻撃用のコリジョンを作成する。
+		MakeAttackCollision2();
 	}
 }
 
@@ -227,20 +234,6 @@ const bool Enemy::SearchPlayer() const
 {
 	//エネミーからプレイヤーに向かうベクトルを求める。
 	Vector3 diff = m_player->GetPosition() - m_position;
-
-	//エネミーからプレイヤーに向かうベクトルを正規化(大きさを1)する。
-	diff.Normalize();
-	//エネミーの正面のベクトルと、エネミーからプレイヤーに向かうベクトルの。
-	//内積(cosθ)を求める。
-	float cos = m_forward.Dot(diff);
-	//内積(cosθ)から角度(θ)を求める。
-	float angle = acosf(cos);
-	//角度(θ)が120°(視野角)より小さければ。
-	if (angle <= (Math::PI / 180.0f) * 120.0f)
-	{
-		//プレイヤーを見つけた！
-		return true;
-	}
 
 	//プレイヤーにある程度近かったら。
 	if (diff.LengthSq() <= 700.0 * 700.0f)
@@ -259,29 +252,56 @@ const bool Enemy::SearchPlayer() const
 			return true;
 		}
 	}
-	//見つけられなかったら実行しない
+	//プレイヤーを見つけられなかった。
 	return false;
 }
 
 void Enemy::MakeAttackCollision()
 {
-	/*
+	
 	//攻撃当たり判定用のコリジョンオブジェクトを作成する。
 	auto collisionObject = NewGO<CollisionObject>(0);
-	//剣のボーンのワールド行列を取得する。
-	Matrix matrix = m_enemy.GetBone(m_swordBoneId)->GetWorldMatrix();
-	//ボックス状のコリジョンを作成する。
-	collisionObject->CreateBox(m_position, Quaternion::Identity, Vector3(100.0f, 10.0f, 10.0f));
-	collisionObject->SetWorldMatrix(matrix);
+	Vector3 collisionPosition = m_position;
+	//座標をプレイヤーの少し前に設定する。
+	collisionPosition += m_forward * 50.0f;
+	//球状のコリジョンを作成する。
+	collisionObject->CreateSphere(collisionPosition,        //座標。
+		Quaternion::Identity,                               //回転。
+		15.0f                                               //半径。
+	);
 	collisionObject->SetName("enemy_attack");
-	*/
+
+	//剣のボーンのワールド行列を取得する。
+	Matrix matrix = m_enemy.GetBone(m_RightHandId)->GetWorldMatrix();
+	//「LeftHand」ボーンのワールド行列をコリジョンに適用する。
+	collisionObject->SetWorldMatrix(matrix);
+}
+
+void Enemy::MakeAttackCollision2()
+{
+
+	//攻撃当たり判定用のコリジョンオブジェクトを作成する。
+	auto collisionObject2 = NewGO<CollisionObject>(0);
+	Vector3 collisionPosition2 = m_position;
+	//座標をプレイヤーの少し前に設定する。
+	collisionPosition2 += m_forward * 50.0f;
+	//球状のコリジョンを作成する。
+	collisionObject2->CreateSphere(collisionPosition2,        //座標。
+		Quaternion::Identity,                               //回転。
+		15.0f                                               //半径。
+	);
+	collisionObject2->SetName("enemy_attack2");
+
+	//剣のボーンのワールド行列を取得する。
+	Matrix matrix2 = m_enemy.GetBone(m_LeftHandId)->GetWorldMatrix();
+	//「RightHand」ボーンのワールド行列をコリジョンに適用する。
+	collisionObject2->SetWorldMatrix(matrix2);
 }
 
 void Enemy::ProcessCommonStateTransition()
 {
-	
 	//各タイマーを初期化。
-	//待機時間と追跡時間を制限するため。
+		//待機時間と追跡時間を制限するため。
 	m_idleTimer = 0.0f;
 	m_chaseTimer = 0.0f;
 
@@ -291,8 +311,6 @@ void Enemy::ProcessCommonStateTransition()
 	//プレイヤーを見つけたら。
 	if (SearchPlayer() == true)
 	{
-		return;
-		
 		//通常攻撃できない距離なら。
 		if (IsCanAttack() == false)
 		{
@@ -311,8 +329,9 @@ void Enemy::ProcessCommonStateTransition()
 			}
 			//乱数が40未満なら。
 			else {
-				//魔法攻撃ステートに遷移する。
-				m_enemyState = enEnemyState_MagicAttack;
+				//追跡攻撃ステートに遷移する。
+				//m_enemyState = enEnemyState_MagicAttack;
+				m_enemyState = enEnemyState_Chase;
 				return;
 			}
 		}
@@ -321,10 +340,12 @@ void Enemy::ProcessCommonStateTransition()
 		{
 			//乱数によって、攻撃するか待機させるかを決定する。	
 			int ram = rand() % 100;
-			if (ram > 30)
+			if (ram > 60)
 			{
-				//攻撃ステートに遷移する。
-				m_enemyState = enEnemyState_Attack;
+					m_enemyState = enEnemyState_Attack1;
+					m_enemyattackmotion = 1;
+
+
 				m_isUnderAttack = false;
 				return;
 			}
@@ -335,7 +356,6 @@ void Enemy::ProcessCommonStateTransition()
 				return;
 			}
 		}
-		
 	}
 	//プレイヤーを見つけられなければ。
 	else
@@ -345,7 +365,6 @@ void Enemy::ProcessCommonStateTransition()
 		return;
 
 	}
-	
 }
 
 void Enemy::ProcessIdleStateTransition()
@@ -414,7 +433,12 @@ void Enemy::ManageState()
 		ProcessChaseStateTransition();
 		break;
 		//攻撃ステートの時。
-	case enEnemyState_Attack:
+	case enEnemyState_Attack1:
+		//攻撃ステートのステート遷移処理。
+		ProcessAttackStateTransition();
+		break;
+		//攻撃ステート2の時。
+	case enEnemyState_Attack2:
 		//攻撃ステートのステート遷移処理。
 		ProcessAttackStateTransition();
 		break;
@@ -432,18 +456,18 @@ void Enemy::PlayAnimation()
 		break;
 		//追跡ステートの時。
 	case enEnemyState_Chase:
-		//歩きアニメーションを再生。
-		m_enemy.PlayAnimation(enAnimationClip_Walk, 0.1f);
+		//走りアニメーションを再生。
+		m_enemy.PlayAnimation(enAnimationClip_Run, 0.1f);
 		break;
-		//攻撃ステートの時。
-	case enEnemyState_Attack:
-		//攻撃アニメーションを再生。
-		m_enemy.PlayAnimation(enAnimationClip_Attack, 0.1f);
+		//エネミーステートがenPlayerState_Attack1だったら。
+	case enEnemyState_Attack1:
+		//attackモーションを再生
+		m_enemy.PlayAnimation(enAnimationClip_Attack1, 0.1f);
 		break;
-		//ダウンステートの時。
-	case enEnemyState_Down:
-		//ダウンアニメーションを再生。
-		m_enemy.PlayAnimation(enAnimationClip_Down, 0.1f);
+		//エネミーステートがenPlayerState_Attack2だったら。
+	case enEnemyState_Attack2:
+		//attackモーションを再生
+		m_enemy.PlayAnimation(enAnimationClip_Attack2, 0.1f);
 		break;
 	default:
 		break;

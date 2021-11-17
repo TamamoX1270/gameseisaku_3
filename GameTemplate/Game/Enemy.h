@@ -19,6 +19,7 @@ public:
     /// エネミーの攻撃との当たり判定処理。
     /// </summary>
     void Collision();
+    void MakeAttackCollision2();
     /// <summary>
     /// プレイヤーを探索する。
     /// </summary>
@@ -75,7 +76,8 @@ public:
     enum EnEnemyState {
         enEnemyState_Idle,					//待機。
         enEnemyState_Chase,					//追跡。
-        enEnemyState_Attack,				//攻撃。
+        enEnemyState_Attack1,				//攻撃1。
+        enEnemyState_Attack2,				//攻撃2。
         enEnemyState_MagicAttack,			//魔法攻撃。
         enEnemyState_ReceiveDamage,			//被ダメージ。
         enEnemyState_Down,					//ダウン。
@@ -86,7 +88,8 @@ private:
         enAnimationClip_Idle,					//待機アニメーション。
         enAnimationClip_Walk,					//歩きアニメーション。
         enAnimationClip_Run,					//走りアニメーション。
-        enAnimationClip_Attack,					//攻撃アニメーション。
+        enAnimationClip_Attack1,				//攻撃アニメーション1。
+        enAnimationClip_Attack2,				//攻撃アニメーション2。
         enAnimationClip_MagicAttack,			//魔法攻撃アニメーション。
         enAnimationClip_Damage,					//被ダメージアニメーション。
         enAnimationClip_Down,					//ダウンアニメーション。
@@ -105,10 +108,13 @@ private:
     Quaternion				m_rotation;			            //回転。
     PhysicsStaticObject		m_physicsStaticObject;          //静的物理オブジェクト。
     CollisionObject* m_collisionObject;
+    Player* m_player = nullptr;
 
     bool m_isUnderAttack = false;					        //攻撃中ならtrue。
     int m_attackstate = false;
-    Player* m_player = nullptr;						     	//プレイヤー。
+    int m_enemyattackmotion = 0;//1が通常1,0が通常2					     	//プレイヤー。
     float						m_chaseTimer = 0.0f;        //追跡タイマー。
     float						m_idleTimer = 0.0f;		    //待機タイマー。
+    int m_LeftHandId = -1;                                  //ボーンのID。
+    int m_RightHandId = -1;                                 //ボーンのID。
 };

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Wall.h"
 #include "Player.h"
+#include "Game.h"
 
 Wall::Wall()
 {
@@ -26,12 +27,12 @@ bool  Wall::Start()
 
 void Wall::GetWorld()
 {
-	if (FindGO<Player>("player")->GetWorldState() == 0 && createstate == false)
+	if (FindGO<Game>("game")->GetWorldState() && createstate == false)
 	{
 		createstate = true;
 		Create();
 	}
-	else if (FindGO<Player>("player")->GetWorldState() == 1)
+	else if (FindGO<Game>("game")->GetWorldState() == 1)
 	{
 		m_physicsStaticObject.Release();
 		createstate = false;
@@ -59,7 +60,7 @@ void  Wall::Update()
 
 void  Wall::Render(RenderContext& rc)
 {
-	if (FindGO<Player>("player")->GetWorldState() == 0)
+	if (FindGO<Game>("game")->GetWorldState() == 0)
 	{
 		m_wall.Draw(rc);    //ÉÇÉfÉãÇï`âÊÇ∑ÇÈÅB
 	}

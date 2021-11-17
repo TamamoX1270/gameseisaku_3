@@ -38,11 +38,11 @@ bool Player::Start()
 	m_modelRender.Init("Assets/modelData/Kachujin.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
 	m_modelRender2.Init("Assets/modelData/blackKachujin.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
 
-	m_modelRender.SetScale({ 1.5f,1.5f,1.5f });
+	m_modelRender.SetScale({ 2.0f,2.0f,2.0f });
 	m_modelRender.SetPosition(m_position);
 	m_modelRender.SetPosition({ 1.0f,0.0f,1.0f });
 	m_modelRender.Update();
-	m_modelRender2.SetScale({ 1.5f,1.5f,1.5f });
+	m_modelRender2.SetScale({ 2.0f,2.0f,2.0f });
 	m_modelRender2.SetPosition(m_position2);
 	m_modelRender2.SetPosition({ 1.0f,0.0f,1.0f });
 	m_modelRender2.Update();
@@ -61,7 +61,7 @@ bool Player::Start()
 	m_sphereCollider.Create(48.0f);
 
 	//キャラコンを初期化する。
-	m_characterController.Init(25.0f, 25.0f, m_position);
+	m_characterController.Init(25.0f, 100.0f, m_position);
 
 	return true;
 }
@@ -124,27 +124,6 @@ void Player::Move()
 
 	//キャラクターコントローラーを使って座標を移動させる。
 	m_position = m_characterController.Execute(m_moveSpeed, 1.0f / 60.0f);
-
-	//白の世界の時かつ白のチェンジステートがtrueかつLB2を押されたら
-	if (g_pad[0]->IsTrigger(enButtonLB2)&& worldstate==0 && whiteChangestate == true)
-	{
-		//黒の世界にして
-		worldstate = 1;
-		//黒タイマーを0.0fにする。
-		blacktimer = 0.0f;
-		//黒のチェンジステートをfalseにする。
-		blackChangestate = false;
-	}
-	//黒の世界の時かつ黒のチェンジステートがtrueかつLB2を押されたら
-	if (g_pad[0]->IsTrigger(enButtonLB1) && worldstate == 1&& blackChangestate ==true )
-	{
-		//白の世界にして
-		worldstate = 0;
-		//白タイマーを0.0fにする。
-		whitetimer = 0.0f;
-		//白のチェンジステートをfalseにする。
-		whiteChangestate = false;
-	}
 
 	//絵描きさんに座標を教える。
 	m_modelRender.SetPosition(m_position);
@@ -356,14 +335,14 @@ void Player::PlayAnimation()
 		//プレイヤーステートがenPlayerState_Attack2だったら。
 	case enPlayerState_Attack2:
 		//attackモーションを再生
-		m_modelRender.PlayAnimation(enAnimationClip_Attack2);
-		m_modelRender2.PlayAnimation(enAnimationClip_Attack2);
+		m_modelRender.PlayAnimation(enAnimationClip_Attack2, 0.1f);
+		m_modelRender2.PlayAnimation(enAnimationClip_Attack2, 0.1f);
 		break;
 		//プレイヤーステートがenPlayerState_Attack3だったら。
 	case enPlayerState_Attack3:
 		//attackモーションを再生
-		m_modelRender.PlayAnimation(enAnimationClip_Attack3);
-		m_modelRender2.PlayAnimation(enAnimationClip_Attack3);
+		m_modelRender.PlayAnimation(enAnimationClip_Attack3, 0.1f);
+		m_modelRender2.PlayAnimation(enAnimationClip_Attack3, 0.1f);
 		break;
 	}
 	
@@ -473,27 +452,6 @@ void Player::Timer()
 		m_attackstate = false;
 		m_attacktimer = 0.0f;
 	}
-	//白の世界の時かつ白のチェンジステートがfalseなら白タイマーを取得する。
-	if (worldstate == 0&&whiteChangestate==false)
-	{
-		whitetimer += g_gameTime->GetFrameDeltaTime();
-	}
-	//白の世界のタイマーが2.0fを越えていたら
-	if (whitetimer >= 2.0f&&whiteChangestate == false)
-	{
-		//白のチェンジステートをtrueにする。
-		whiteChangestate = true;
-	}
-	//黒の世界の時かつ黒のチェンジステートがfalseなら黒タイマーを取得する。
-	if (worldstate == 1&& blackChangestate == false)
-	{
-		blacktimer += g_gameTime->GetFrameDeltaTime();
-	}
-	//黒の世界のタイマーが2.0fを越えていたら
-	if (blacktimer >= 2.0f&&blackChangestate == false)
-	{
-		blackChangestate = true;
-	}
 
 	wchar_t wcsbuf4[256];
 	swprintf_s(wcsbuf4, 256, L"黒チェンジ%d秒", int(blacktimer));
@@ -584,11 +542,11 @@ void Player::Render(RenderContext& rc)
 	m_fontRender3.Draw(rc);
 	//m_fontRender4.Draw(rc);
 	//m_fontRender5.Draw(rc);
-	if (worldstate == 0)
+	if (FindGO<Game>("game")->GetWorldState() == 0)
 	{
 		m_modelRender.Draw(rc);
 	}
-	if (worldstate == 1)
+	if (FindGO<Game>("game")->GetWorldState() == 1)
 	{
 		m_modelRender2.Draw(rc);
 	}
