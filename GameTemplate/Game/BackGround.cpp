@@ -14,12 +14,12 @@ BackGround::~BackGround()
 bool BackGround::Start()
 {
 
-	m_backGround.Init("Assets/modelData/stage/stagewater.tkm");
-	m_backGround.SetScale(Vector3::One * 20.0f);
+	m_backGround.Init("Assets/modelData/stage/background.tkm");
+	m_backGround.SetScale(m_scale);
 	m_backGround.Update();
 
-	m_backGround2.Init("Assets/modelData/stage/darkstagewater.tkm");
-	m_backGround2.SetScale(Vector3::One * 20.0f);
+	m_backGround2.Init("Assets/modelData/stage/background.tkm");
+	m_backGround2.SetScale(m_scale);
 	m_backGround2.Update();
 
 	//PhysicsStaticObject‚ğ‰Šú‰»B

@@ -2,7 +2,9 @@
 #include "Player.h"
 #include "game.h"
 #include "Wall.h"
+#include "MoveFloor.h"
 
+#include <stdlib.h>
 //CollisionObjectを使用するために、ファイルをインクルードする。
 #include "collision/CollisionObject.h"
 
@@ -21,15 +23,19 @@ bool Player::Start()
 	m_animationClips[enAnimationClip_Attack2].SetLoopFlag(false);
 	m_animationClips[enAnimationClip_Attack3].Load("Assets/animData/kachujin/attack3.tka");
 	m_animationClips[enAnimationClip_Attack3].SetLoopFlag(false);
+	m_animationClips[enAnimationClip_HitDamage1].Load("Assets/animData/kachujin/hitdamage1.tka");
+	m_animationClips[enAnimationClip_HitDamage1].SetLoopFlag(false);
+	m_animationClips[enAnimationClip_HitDamage2].Load("Assets/animData/kachujin/hitdamage2.tka");
+	m_animationClips[enAnimationClip_HitDamage2].SetLoopFlag(false);
+	m_animationClips[enAnimationClip_Down1].Load("Assets/animData/kachujin/down1.tka");
+	m_animationClips[enAnimationClip_Down1].SetLoopFlag(false);
+	m_animationClips[enAnimationClip_Down2].Load("Assets/animData/kachujin/down2.tka");
+	m_animationClips[enAnimationClip_Down2].SetLoopFlag(false);
+	m_animationClips[enAnimationClip_Down3].Load("Assets/animData/kachujin/down3.tka");
+	m_animationClips[enAnimationClip_Down3].SetLoopFlag(false);
 	/*
 	m_animationClips[enAnimationClip_MagicAttack].Load("Assets/animData/kachujin/magicattack.tka");
 	m_animationClips[enAnimationClip_MagicAttack].SetLoopFlag(false);
-	*/
-	m_animationClips[enAnimationClip_HitDamage].Load("Assets/animData/kachujin/receivedamage.tka");
-	m_animationClips[enAnimationClip_HitDamage].SetLoopFlag(false);
-	/*
-	m_animationClips[enAnimationClip_Down].Load("Assets/animData/kachujin/down.tka");
-	m_animationClips[enAnimationClip_Down].SetLoopFlag(false);
 	m_animationClips[enAnimationClip_Winner].Load("Assets/animData/kachujin/winner.tka");
 	m_animationClips[enAnimationClip_Winner].SetLoopFlag(false);
 	*/
@@ -38,13 +44,11 @@ bool Player::Start()
 	m_modelRender.Init("Assets/modelData/Kachujin.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
 	m_modelRender2.Init("Assets/modelData/blackKachujin.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
 
-	m_modelRender.SetScale({ 2.0f,2.0f,2.0f });
 	m_modelRender.SetPosition(m_position);
-	m_modelRender.SetPosition({ 1.0f,0.0f,1.0f });
 	m_modelRender.Update();
-	m_modelRender2.SetScale({ 2.0f,2.0f,2.0f });
+	m_modelRender.SetScale(m_scale);
 	m_modelRender2.SetPosition(m_position2);
-	m_modelRender2.SetPosition({ 1.0f,0.0f,1.0f });
+	m_modelRender2.SetScale(m_scale);
 	m_modelRender2.Update();
 
 	//アニメーションイベント用の関数を設定する。
@@ -58,10 +62,10 @@ bool Player::Start()
 	m_RightHandId = m_modelRender.FindBoneID(L"RightHand");
 
 	//コライダーを初期化。（スフィアになってる)
-	m_sphereCollider.Create(48.0f);
+	m_sphereCollider.Create(4.8f);
 
 	//キャラコンを初期化する。
-	m_characterController.Init(25.0f, 100.0f, m_position);
+	m_characterController.Init(2.5f, 7.0f, m_position);
 
 	return true;
 }
@@ -81,6 +85,7 @@ void Player::Update() //常に1秒間に60回呼び出される
 	Move();
 	ManageState();
 	PlayAnimation();
+	Collision();
 	Attack();
 	Timer();
 	Rotation();
@@ -91,43 +96,116 @@ void Player::Update() //常に1秒間に60回呼び出される
 
 void Player::Move()
 {
-	//移動できない状態であれば、移動処理はしない。
-	if (IsEnableMove() == false)
+	//リフトが動いてない時の処理。
+	if (FindGO<MoveFloor>("movefloor")->GetMoveFloor() == false)
 	{
-		return;
+		//移動できない状態であれば、移動処理はしない。
+		if (IsEnableMove() == false)
+		{
+			m_moveSpeed.x = 0.0f;
+			m_moveSpeed.z = 0.0f;
+			m_position2 = m_position;
+
+			//キャラクターコントローラーを使用して、座標を更新。
+			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+			if (m_characterController.IsOnGround()) {
+				//地面についた。
+				m_moveSpeed.y = 0.0f;
+			}
+		}
+		else
+		{
+			m_moveSpeed.x = 0.0f;
+			m_moveSpeed.z = 0.0f;
+			m_position2 = m_position;
+			//このフレームの移動量を求める。
+			//左スティックの入力量を受け取る。
+			float lStick_x = g_pad[0]->GetLStickXF();
+			float lStick_y = g_pad[0]->GetLStickYF();
+			//カメラの前方方向と右方向を取得。
+			Vector3 cameraForward = g_camera3D->GetForward();
+			Vector3 cameraRight = g_camera3D->GetRight();
+			//XZ平面での前方方向、右方向に変換する。
+			cameraForward.y = 0.0f;
+			cameraForward.Normalize();
+			cameraRight.y = 0.0f;
+			cameraRight.Normalize();
+			//XZ成分の移動速度をクリア。
+			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+
+			//キャラクターコントローラーを使用して、座標を更新。
+			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+			if (m_characterController.IsOnGround()) {
+				//地面についた。
+				m_moveSpeed.y = 0.0f;
+			}
+		}
+
+		//絵描きさんに座標を教える。
+		m_modelRender.SetPosition(m_position);
+		m_modelRender2.SetPosition(m_position);
+
 	}
+	else
+	{
+		//移動できない状態であれば、移動処理はしない。
+		if (IsEnableMove() == false)
+		{
+			m_position2 = m_position;
 
-	m_position2 = m_position;
-	//xzの移動速度を0.0fにする。
-	m_moveSpeed.x = 0.0f;
-	m_moveSpeed.z = 0.0f;
+			//重力を発生させる。
+			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
 
-	//左スティックの入力量を取得。
-	Vector3 stickL;
-	stickL.x = g_pad[0]->GetLStickXF();
-	stickL.y = g_pad[0]->GetLStickYF();
+			//キャラクターコントローラーを使用して、座標を更新。
+			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+			if (m_characterController.IsOnGround()) {
+				//地面についた。
+				m_moveSpeed.y = 0.0f;
+			}
+			//絵描きさんに座標を教える。
+			m_modelRender.SetPosition(m_position);
+			m_modelRender2.SetPosition(m_position);
 
-	//カメラの前方向と右方向のベクトルを持ってくる。
-	Vector3 forward = g_camera3D->GetForward();
-	Vector3 right = g_camera3D->GetRight();
+			m_moveSpeed.x = 0.0f;
+			m_moveSpeed.z = 0.0f;
+		}
+		else
+		{
+			m_position2 = m_position;
+			//このフレームの移動量を求める。
+			//左スティックの入力量を受け取る。
+			float lStick_x = g_pad[0]->GetLStickXF();
+			float lStick_y = g_pad[0]->GetLStickYF();
+			//カメラの前方方向と右方向を取得。
+			Vector3 cameraForward = g_camera3D->GetForward();
+			Vector3 cameraRight = g_camera3D->GetRight();
+			//XZ平面での前方方向、右方向に変換する。
+			cameraForward.y = 0.0f;
+			cameraForward.Normalize();
+			cameraRight.y = 0.0f;
+			cameraRight.Normalize();
+			//XZ成分の移動速度をクリア。
+			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
 
-	//y方向には移動させない。
-	forward.y = 0.0f;
-	right.y = 0.0f;
+			//重力を発生させる。
+			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
+			//キャラクターコントローラーを使用して、座標を更新。
+			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+			if (m_characterController.IsOnGround()) {
+				//地面についた。
+				m_moveSpeed.y = 0.0f;
+			}
+			//絵描きさんに座標を教える。
+			m_modelRender.SetPosition(m_position);
+			m_modelRender2.SetPosition(m_position);
 
-	//左スティックの入力量と120.0fを乗算。
-	right *= stickL.x * 700.0f;
-	forward *= stickL.y * 700.0f;
+			m_moveSpeed.x = 0.0f;
+			m_moveSpeed.z = 0.0f;
 
-	//移動速度にスティックの入力量を加算する。
-	m_moveSpeed += right + forward;
-
-	//キャラクターコントローラーを使って座標を移動させる。
-	m_position = m_characterController.Execute(m_moveSpeed, 1.0f / 60.0f);
-
-	//絵描きさんに座標を教える。
-	m_modelRender.SetPosition(m_position);
-	m_modelRender2.SetPosition(m_position);
+		}
+	}
 }
 void Player::ProcessIdleStateTransition()
 {
@@ -157,13 +235,24 @@ void Player::ProcessAttackStateTransition()
 	}
 }
 
-void Player::ProcessReceiveDamageStateTransition()
+void Player::ProcessHitDamageStateTransition()
 {
 	//被ダメージアニメーションの再生が終わったら。
 	if (m_modelRender.IsPlayingAnimation() == false)
 	{
+		//被ダメージクールタイムをfalseにする。
+		hitdamagecooltime = false;
 		//ステートを遷移する。
 		ProcessCommonStateTransition();
+	}
+}
+
+void Player::ProcessDownStateTransition()
+{
+	//被ダメージアニメーションの再生が終わったら。
+	if (m_modelRender.IsPlayingAnimation() == false)
+	{
+		DeleteGO(FindGO<Game>("game"));
 	}
 }
 void Player::ManageState()
@@ -201,77 +290,106 @@ void Player::ManageState()
 		ProcessAttackStateTransition();
 		break;
 		//被ダメージ時ステートの時。
-	case enPlayerState_ReceiveDamage:
+	case enPlayerState_HitDamage1:
 		//被ダメージ時ステートのステート遷移処理。
-		ProcessReceiveDamageStateTransition();
+		ProcessHitDamageStateTransition();
+		break;
+		//被ダメージ時ステート2の時。
+	case enPlayerState_HitDamage2:
+		//被ダメージ時ステートのステート遷移処理2。
+		ProcessHitDamageStateTransition();
+		break;
+		//プレイヤーステートがenPlayerState_Down1だったら。
+	case enPlayerState_Down1:
+		//ダウンステートの遷移処理。
+		ProcessDownStateTransition();
+		//プレイヤーステートがenPlayerState_Down2だったら。
+	case enPlayerState_Down2:
+		//ダウンステートの遷移処理。
+		ProcessDownStateTransition();
+		//プレイヤーステートがenPlayerState_Down3だったら。
+	case enPlayerState_Down3:
+		//ダウンステートの遷移処理。
+		ProcessDownStateTransition();
 		break;
 	}
 }
 
 void Player::ProcessCommonStateTransition()
 {
-	//RB1ボタンが押されたら。
-	if (g_pad[0]->IsTrigger(enButtonRB1)&& player_attackmotion == 0)
+	if (m_playerhp == 0)
 	{
-		//m_attacktimerを0.21fにする。(0.3fの猶予を持たせるため)
-		m_attacktimer = 0.21f;
-		//攻撃中にする。
-		m_attackstate = true;
-		//攻撃ステートに移行する。
-		m_playerState = enPlayerState_Attack1;
-		//player_atacckmotionを+1する。
-		player_attackmotion++;
-		//フラグをfalseにする。
-		m_isUnderAttack = false;
-		return;
-	}
-	else if (g_pad[0]->IsTrigger(enButtonRB1) && player_attackmotion == 1)
-	{
-		//m_attacktimerを0.2fにする。(0.3fの猶予を持たせるため)
-		m_attacktimer = 0.2f;
-		//攻撃中にする。
-		m_attackstate = true;
-		//攻撃ステートに移行する。
-		m_playerState = enPlayerState_Attack2;
-		//player_atacckmotionを+1する。
-		player_attackmotion++;
-		//フラグをfalseにする。
-		m_isUnderAttack = false;
-		return;
-	}
-	else if (g_pad[0]->IsTrigger(enButtonRB1) && player_attackmotion == 2)
-	{
-		//m_attacktimerを0.36fにする。(0.3fの猶予を持たせるため)
-		m_attacktimer = 0.36f;
-		//攻撃中にする。
-		m_attackstate = true;
-		//攻撃ステートに移行する。
-		m_playerState = enPlayerState_Attack3;
-		//player_atacckmotionをリセットする。
-		player_attackmotion=0;
-		//フラグをfalseにする。
-		m_isUnderAttack = false;
-		return;
-	}
-	if (m_attackstate == false)
-	{
-		//xかzの移動速度があったら(スティックの入力があったら)。
-		if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
+		//キャラコンの剛体を破棄する。
+		m_characterController.RemoveRigidBoby();
+		//乱数によって、ダウンモーションを決定する。
+		int ram = rand() % 100;
+		if (ram > 20)
 		{
-			//ステートを2(歩き)にする。
-			m_playerState = enPlayerState_Walk;
+			if (ram > 20 && ram <= 60)
+			{
+				//ダウン１を再生
+				m_playerState = enPlayerState_Down1;
+			}
+			else
+			{
+				//ダウン2を再生
+				m_playerState = enPlayerState_Down2;
+			}
 		}
-		//xとzの移動速度が無かったら(スティックの入力が無かったら)。
 		else
 		{
-			//ステートを0(待機)にする。
-			m_playerState = enPlayerState_Idle;
+			//ダウン3を再生
+			m_playerState = enPlayerState_Down3;
 		}
 	}
-	else if (m_attackstate == true)
+	else
 	{
-		if (m_attacktimer >= 3.0f)
+		//RB1ボタンが押されたら。
+		if (g_pad[0]->IsTrigger(enButtonRB1) && player_attackmotion == 0)
 		{
+			//m_attacktimerを0.21fにする。(0.3fの猶予を持たせるため)
+			m_attacktimer = 0.21f;
+			//攻撃中にする。
+			m_attackstate = true;
+			//攻撃ステートに移行する。
+			m_playerState = enPlayerState_Attack1;
+			//player_atacckmotionを+1する。
+			player_attackmotion++;
+			//フラグをfalseにする。
+			m_isUnderAttack = false;
+			return;
+		}
+		else if (g_pad[0]->IsTrigger(enButtonRB1) && player_attackmotion == 1)
+		{
+			//m_attacktimerを0.2fにする。(0.3fの猶予を持たせるため)
+			m_attacktimer = 0.2f;
+			//攻撃中にする。
+			m_attackstate = true;
+			//攻撃ステートに移行する。
+			m_playerState = enPlayerState_Attack2;
+			//player_atacckmotionを+1する。
+			player_attackmotion++;
+			//フラグをfalseにする。
+			m_isUnderAttack = false;
+			return;
+		}
+		else if (g_pad[0]->IsTrigger(enButtonRB1) && player_attackmotion == 2)
+		{
+			//m_attacktimerを0.36fにする。(0.3fの猶予を持たせるため)
+			m_attacktimer = 0.36f;
+			//攻撃中にする。
+			m_attackstate = true;
+			//攻撃ステートに移行する。
+			m_playerState = enPlayerState_Attack3;
+			//player_atacckmotionをリセットする。
+			player_attackmotion = 0;
+			//フラグをfalseにする。
+			m_isUnderAttack = false;
+			return;
+		}
+		if (m_attackstate == false)
+		{
+			//xかzの移動速度があったら(スティックの入力があったら)。
 			if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
 			{
 				//ステートを2(歩き)にする。
@@ -282,6 +400,23 @@ void Player::ProcessCommonStateTransition()
 			{
 				//ステートを0(待機)にする。
 				m_playerState = enPlayerState_Idle;
+			}
+		}
+		else if (m_attackstate == true)
+		{
+			if (m_attacktimer >= 3.0f)
+			{
+				if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
+				{
+					//ステートを2(歩き)にする。
+					m_playerState = enPlayerState_Walk;
+				}
+				//xとzの移動速度が無かったら(スティックの入力が無かったら)。
+				else
+				{
+					//ステートを0(待機)にする。
+					m_playerState = enPlayerState_Idle;
+				}
 			}
 		}
 	}
@@ -321,10 +456,16 @@ void Player::PlayAnimation()
 		m_modelRender2.PlayAnimation(enAnimationClip_Walk, 0.1f);
 		break;
 		//プレイヤーステートがHitDamageだったら。
-	case enAnimationClip_HitDamage:
+	case enAnimationClip_HitDamage1:
 		//被ダメージモーションを再生
-		m_modelRender.PlayAnimation(enAnimationClip_HitDamage, 0.1f);
-		m_modelRender2.PlayAnimation(enAnimationClip_HitDamage, 0.1f);
+		m_modelRender.PlayAnimation(enAnimationClip_HitDamage1, 0.3f);
+		m_modelRender2.PlayAnimation(enAnimationClip_HitDamage1, 0.3f);
+		break;
+		//プレイヤーステートがHitDamage2だったら。
+	case enAnimationClip_HitDamage2:
+		//被ダメージモーションを再生
+		m_modelRender.PlayAnimation(enAnimationClip_HitDamage2, 0.3f);
+		m_modelRender2.PlayAnimation(enAnimationClip_HitDamage2, 0.3f);
 		break;
 		//プレイヤーステートがenPlayerState_Attack1だったら。
 	case enPlayerState_Attack1:
@@ -343,6 +484,24 @@ void Player::PlayAnimation()
 		//attackモーションを再生
 		m_modelRender.PlayAnimation(enAnimationClip_Attack3, 0.1f);
 		m_modelRender2.PlayAnimation(enAnimationClip_Attack3, 0.1f);
+		break;
+		//プレイヤーステートがenPlayerState_Down1だったら。
+	case enPlayerState_Down1:
+		//downモーションを再生
+		m_modelRender.PlayAnimation(enAnimationClip_Down1, 0.1f);
+		m_modelRender2.PlayAnimation(enAnimationClip_Down1, 0.1f);
+		break;
+		//プレイヤーステートがenPlayerState_Down2だったら。
+	case enPlayerState_Down2:
+		//downモーションを再生
+		m_modelRender.PlayAnimation(enAnimationClip_Down2, 0.1f);
+		m_modelRender2.PlayAnimation(enAnimationClip_Down2, 0.1f);
+		break;
+		//プレイヤーステートがenPlayerState_Down3だったら。
+	case enPlayerState_Down3:
+		//downモーションを再生
+		m_modelRender.PlayAnimation(enAnimationClip_Down3, 0.1f);
+		m_modelRender2.PlayAnimation(enAnimationClip_Down3, 0.1f);
 		break;
 	}
 	
@@ -407,7 +566,7 @@ void Player::MakeAttackCollision()
 	//球状のコリジョンを作成する。
 	collisionObject->CreateSphere(collisionPosition,        //座標。
 		Quaternion::Identity,                               //回転。
-		15.0f                                               //半径。
+		1.5f                                               //半径。
 	);
 	collisionObject->SetName("player_attack");
 
@@ -428,7 +587,7 @@ void Player::MakeAttackCollision2()
 	//球状のコリジョンを作成する。
 	collisionObject2->CreateSphere(collisionPosition2,        //座標。
 		Quaternion::Identity,                               //回転。
-		15.0f                                               //半径。
+		1.5f                                               //半径。
 	);
 	collisionObject2->SetName("player_attack2");
 
@@ -440,6 +599,11 @@ void Player::MakeAttackCollision2()
 
 void Player::Timer()
 {
+	//被ダメージステートがtrueならタイマーを取得する。
+	if (m_hitdamagestate == true)
+	{
+		m_hitdamagetimer += g_gameTime->GetFrameDeltaTime();
+	}
 	//攻撃中タイマーを取得する
 	if (m_attackstate == true)
 	{
@@ -451,6 +615,13 @@ void Player::Timer()
 		//m_attackstateをfalseにしてm_attacktimerを0に戻す
 		m_attackstate = false;
 		m_attacktimer = 0.0f;
+	}
+	//被ダメージステートがtrueかつタイマーが3.0fを越えていたら
+	if (m_hitdamagestate == true && m_hitdamagetimer >= 3.0f)
+	{
+		//m_hitdamagestateをfalseにしてm_hitdamagetimerを0に戻す
+		m_hitdamagestate = false;
+		m_hitdamagetimer = 0.0f;
 	}
 
 	wchar_t wcsbuf4[256];
@@ -495,6 +666,68 @@ void Player::Rotation()
 	}
 }
 
+void Player::Collision()
+{
+	//被ダメージ、あるいはダウンステートの時、あるいはプレイヤーのHPが0の時あるいは被ダメステートがtrueの時
+	// あるいはダウンステートの時。
+	//当たり判定処理はしない。
+	if (m_playerState == enPlayerState_HitDamage1 ||
+		m_playerState == enPlayerState_HitDamage2 ||
+		m_playerState == enPlayerState_Down1 ||
+		m_playerState == enPlayerState_Down2 ||
+		m_playerState == enPlayerState_Down3 ||
+		m_playerhp == 0||
+		m_hitdamagestate ==true)
+	{
+		return;
+	}
+	//Enemyが作成した、攻撃のヒット判定用のコリジョンの配列を取得。
+	const auto& collisions = g_collisionObjectManager->FindCollisionObjects("enemy_attack");
+	//for文で配列を回す。
+	for (auto collision : collisions)
+	{
+		//攻撃のコリジョンと敵のキャラコンが。
+		//衝突していたら。
+		if (collision->IsHit(m_characterController) == true)
+		{
+			//hitdamagecooltimeがfalseの時
+			if (hitdamagecooltime == false)
+			{
+				//hpを１減らす
+				m_playerhp--;
+			}
+			//被ダメクールタイムをtrueにする。
+			hitdamagecooltime = true;
+			//被ダメステートをtrueにする。
+			m_hitdamagestate = true;
+			//被ダメージステートに遷移する。
+			m_playerState = enPlayerState_HitDamage1;
+		}
+	}
+	//Enemyが作成した、攻撃のヒット判定用のコリジョン2の配列を取得。
+	const auto& collisions2 = g_collisionObjectManager->FindCollisionObjects("enemy_attack2");
+	//for文で配列を回す。
+	for (auto collision : collisions2)
+	{
+		//攻撃のコリジョンと敵のコリジョンが。
+		//衝突していたら。
+		if (collision->IsHit(m_characterController) == true)
+		{
+			//hitdamagecooltimeがfalseの時
+			if (hitdamagecooltime == false)
+			{
+				//hpを１減らす
+				m_playerhp--;
+			}
+			//被ダメクールタイムをtrueにする。
+			hitdamagecooltime = true;
+			//被ダメステートをtrueにする。
+			m_hitdamagestate = true;
+			//被ダメージステートに遷移する。
+			m_playerState = enPlayerState_HitDamage2;
+		}
+	}
+}
 
 void Player::Moji()
 {
@@ -532,6 +765,17 @@ m_fontRender3.SetPosition(Vector3(-500.0f, 100.0f, 0.0f));
 //フォントの大きさを設定。
 m_fontRender3.SetScale(1.0f);
 
+int plahp = m_playerhp;
+wchar_t wcsbuf6[256];
+swprintf_s(wcsbuf6, 256, L"プレHP:%d", plahp);
+
+//表示するテキストを設定。
+m_fontRender6.SetText(wcsbuf6);
+//フォントの位置を設定。
+m_fontRender6.SetPosition(Vector3(-300.0f, 0.0f, 0.0f));
+//フォントの大きさを設定。
+m_fontRender6.SetScale(1.0f);
+
 }
 
 void Player::Render(RenderContext& rc)
@@ -542,6 +786,7 @@ void Player::Render(RenderContext& rc)
 	m_fontRender3.Draw(rc);
 	//m_fontRender4.Draw(rc);
 	//m_fontRender5.Draw(rc);
+	m_fontRender6.Draw(rc);
 	if (FindGO<Game>("game")->GetWorldState() == 0)
 	{
 		m_modelRender.Draw(rc);

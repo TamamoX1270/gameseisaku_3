@@ -12,7 +12,6 @@ public:
     void Render(RenderContext& rc);                  //描画関数。
     void Rotation();                                 //回転処理
     void Chase();
-    void ProcessEnemyHit();                        //攻撃の当たった判定の処理
     //攻撃処理
     void Attack();
     /// <summary>
@@ -45,6 +44,14 @@ public:
     /// 攻撃ステートの遷移処理。
     /// </summary>
     void ProcessAttackStateTransition();
+    /// <summary>
+    /// 被ダメージステートの遷移処理。
+    /// </summary>
+    void ProcessHitDamageStateTransition();
+    /// <summary>
+    /// ダウンステートの遷移処理。
+    /// </summary>
+    void ProcessDownStateTransition();
     //アニメーションの再生
     void PlayAnimation();
     // アニメーションイベント用の関数。
@@ -60,7 +67,14 @@ public:
     /// </summary>
     /// <returns>攻撃できるならtrue。</returns>
     const bool IsCanAttack() const;
-
+    /// <summary>
+    /// HPを設定する。
+    /// </summary>
+    /// <param name="hp">HP。</param>
+    void SetHP(const int hp)
+    {
+        m_hp = hp;
+    }
     void SetPosition(const Vector3& position)
     {
         m_position = position;
@@ -68,6 +82,10 @@ public:
     void SetRotation(const Quaternion& rotation)
     {
         m_rotation = rotation;
+    }
+    void SetScale(const Vector3& scale)
+    {
+        m_scale = scale;
     }
     const Vector3& GetPosition() const
     {
@@ -78,6 +96,10 @@ public:
         enEnemyState_Chase,					//追跡。
         enEnemyState_Attack1,				//攻撃1。
         enEnemyState_Attack2,				//攻撃2。
+        enEnemyState_HitDamage1,			//被ダメージアニメーション。
+        enEnemyState_HitDamage2,			//被ダメージアニメーション2。
+        enEnemyState_Down1,                 //ダウンアニメーション。
+        enEnemyState_Down2,                 //ダウンアニメーション2。
         enEnemyState_MagicAttack,			//魔法攻撃。
         enEnemyState_ReceiveDamage,			//被ダメージ。
         enEnemyState_Down,					//ダウン。
@@ -91,7 +113,10 @@ private:
         enAnimationClip_Attack1,				//攻撃アニメーション1。
         enAnimationClip_Attack2,				//攻撃アニメーション2。
         enAnimationClip_MagicAttack,			//魔法攻撃アニメーション。
-        enAnimationClip_Damage,					//被ダメージアニメーション。
+        enAnimationClip_HitDamage1,				//被ダメージアニメーション。
+        enAnimationClip_HitDamage2,				//被ダメージアニメーション。
+        enAnimationClip_Down1,                  //ダウンアニメーション。
+        enAnimationClip_Down2,                  //ダウンアニメーション2。
         enAnimationClip_Down,					//ダウンアニメーション。
         enAnimationClip_Num,					//アニメーションの数。
     };
@@ -99,6 +124,7 @@ private:
     AnimationClip				m_animationClips[enAnimationClip_Num];		//アニメーションクリップ。
     CharacterController m_charaCon;                                         //キャラクターコントローラー。
     ModelRender m_enemy;                                                    //モデルレンダー
+    ModelRender m_enemy2;                                                   //モデルレンダー2
     EnEnemyState			m_enemyState = enEnemyState_Idle;		    	//エネミーステート。
     Vector3					m_position;			   		    //座標。
     Vector3					m_scale;			            //大きさ。
@@ -110,11 +136,15 @@ private:
     CollisionObject* m_collisionObject;
     Player* m_player = nullptr;
 
+    FontRender m_fontRender;                                //文字の描画
+
     bool m_isUnderAttack = false;					        //攻撃中ならtrue。
-    int m_attackstate = false;
-    int m_enemyattackmotion = 0;//1が通常1,0が通常2					     	//プレイヤー。
-    float						m_chaseTimer = 0.0f;        //追跡タイマー。
-    float						m_idleTimer = 0.0f;		    //待機タイマー。
+    int m_attackstate = false;                              //攻撃中ならtrue。
+    int hitdamagecooltime = false;                          //被ダメージ中ならtrue。そうでないならfalse。
+    int m_enemyattackmotion = 0;                            //1が通常1,0が通常2
+    float m_chaseTimer = 0.0f;                              //追跡タイマー。
+    float m_idleTimer = 0.0f;		                        //待機タイマー。
     int m_LeftHandId = -1;                                  //ボーンのID。
     int m_RightHandId = -1;                                 //ボーンのID。
+    int m_hp = 0;
 };

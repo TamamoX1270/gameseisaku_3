@@ -60,17 +60,62 @@ namespace nsK2Engine {
 			m_type = type;
 		}
 		/// <summary>
-		/// 明るさを設定。
-		/// </summary>
-		/// <param name="lum"></param>
+        /// 明るさを設定。
+        /// </summary>
+        /// <param name="lum"></param>
 		void SetLuminance(float lum)
 		{
 			m_luminance = lum;
+		}
+
+		//追加したコードここから
+		void SetPosition2(const Vector3& pos2)
+		{
+			m_position2 = pos2;
+			m_isDirty = true;
+		}
+
+		void SetScale2(const Vector3& scale2)
+		{
+			m_scale2 = scale2;
+			m_isDirty = true;
+		}
+		void SetScale2(const float scale2)
+		{
+			m_scale2 = g_vec3One;
+			m_scale2.Scale(scale2);
+			m_isDirty = true;
+		}
+		/// <summary>
+        /// スカイキューブのタイプを設定2。
+        /// </summary>
+        /// <param name="type"></param>
+		void SetType2(EnSkyCubeType type2)
+		{
+			m_type2 = type2;
 		}
 		const wchar_t* GetTextureFilePath()
 		{
 			return m_textureFilePaths[m_type];
 		}
+		/// <summary>
+        /// 明るさを設定2。
+        /// </summary>
+        /// <param name="lum"></param>
+		void SetLuminance2(float lum)
+		{
+			m_luminance2 = lum;
+		}
+		/// <summary>
+        /// 世界のステートを設定。
+        /// </summary>
+        /// <param name="state"></param>
+		void SetWorldState(int state)
+		{
+			m_worldstate = state;
+		}
+		//ここまで
+
 	private:
 		ModelRender m_modelRender;
 		Texture m_texture[enSkyCubeType_Num];
@@ -80,6 +125,14 @@ namespace nsK2Engine {
 		float m_luminance = 3.8f;
 		bool m_isDirty = false;
 		EnSkyCubeType m_type = enSkyCubeType_Day;
+
+		//追加したコード
+		ModelRender m_modelRender2;
+		int m_worldstate = 0;//０が白,１が黒
+		Vector3 m_position2 = g_vec3Zero;
+		Vector3 m_scale2 = g_vec3One * 1000.0f;
+		float m_luminance2 = 3.8f;
+		EnSkyCubeType m_type2 = enSkyCubeType_Day;
 	};
 }
 

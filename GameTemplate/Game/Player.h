@@ -18,8 +18,11 @@ public:
 			m_playerState != enPlayerState_Attack2 &&
 			m_playerState != enPlayerState_Attack3 &&
 			m_playerState != enPlayerState_MagicAttack &&
-			m_playerState != enPlayerState_ReceiveDamage &&
-			m_playerState != enPlayerState_Down &&
+			m_playerState != enPlayerState_HitDamage1 &&
+			m_playerState != enPlayerState_HitDamage2 &&
+			m_playerState != enPlayerState_Down1 &&
+			m_playerState != enPlayerState_Down2 &&
+			m_playerState != enPlayerState_Down3 &&
 			m_playerState != enPlayerState_Clear;
 	}
 	//更新処理。
@@ -32,6 +35,10 @@ public:
 	void Rotation();
 	//攻撃処理
 	void Attack();
+	/// <summary>
+    ///攻撃との当たり判定処理。
+    /// </summary>
+	void Collision();
     //攻撃の際の当たり判定用のコリジョンを作成する。
 	void MakeAttackCollision();
 	void MakeAttackCollision2();
@@ -56,7 +63,11 @@ public:
 	/// <summary>
 	/// 被ダメージステートの遷移処理。
 	/// </summary>
-	void ProcessReceiveDamageStateTransition();
+	void ProcessHitDamageStateTransition();
+	/// <summary>
+    /// ダウンステートの遷移処理。
+    /// </summary>
+	void ProcessDownStateTransition();
 
 	//アニメーションの再生
 	void PlayAnimation();
@@ -71,6 +82,10 @@ public:
 	{
 		m_position = position;
 	}
+	void SetScale(const Vector3& scale)
+	{
+		m_scale = scale;
+	}
 	void SetRotation(const Quaternion& rotation)
 	{
 		m_rotation = rotation;
@@ -79,13 +94,25 @@ public:
 	{
 		return m_position;
 	}
-	const int GetWorldState() const
+	/// <summary>
+    /// 移動速度を加算。
+    /// </summary>
+    /// <param name="addMoveSpeed">加算する移動速度。</param>
+	void AddMoveSpeed(const Vector3& addMoveSpeed)
 	{
-		return worldstate;
+		m_moveSpeed += addMoveSpeed;
 	}
-	const CharacterController&GetCharacon() const
+	/// <summary>
+    /// キャラクターコントローラーを取得。
+    /// </summary>
+    /// <returns>キャラクターコントローラー。</returns>
+	CharacterController& GetCharacterController()
 	{
-		m_characterController;
+		return m_characterController;
+	}
+	const int GetPlayerhp() const
+	{
+		return m_playerhp;
 	}
 	enum EnPlayerState {
 		enPlayerState_Idle,					//待機。
@@ -95,8 +122,11 @@ public:
 		enPlayerState_Attack2,				//攻撃。
 		enPlayerState_Attack3,				//攻撃。
 		enPlayerState_MagicAttack,			//魔法攻撃。
-		enPlayerState_ReceiveDamage,		//ダメ―ジ受けた。
-		enPlayerState_Down,					//HPが0。
+		enPlayerState_HitDamage1,		    //ダメ―ジ受けた。
+		enPlayerState_HitDamage2,	    	//ダメ―ジ受けた。
+		enPlayerState_Down1,				//HPが0。
+		enPlayerState_Down2,				//HPが0。
+		enPlayerState_Down3,				//HPが0。
 		enPlayerState_Clear					//クリアー。
 	};
 
@@ -105,45 +135,51 @@ private:
 		enAnimationClip_Idle,				//待機アニメーション。	
 		enAnimationClip_Walk,				//歩きアニメーション。
 		enAnimationClip_Run,				//走りアニメーション。
-		enAnimationClip_Attack1,				//攻撃アニメーション。
-		enAnimationClip_Attack2,				//攻撃アニメーション。
-		enAnimationClip_Attack3,				//攻撃アニメーション。
+		enAnimationClip_Attack1,			//攻撃アニメーション。
+		enAnimationClip_Attack2,			//攻撃アニメーション。
+		enAnimationClip_Attack3,			//攻撃アニメーション。
 		enAnimationClip_MagicAttack,		//魔法攻撃アニメーション。
-		enAnimationClip_HitDamage,				//被ダメージアニメーション。
-		enAnimationClip_Down,				//ダウンアニメーション。
+		enAnimationClip_HitDamage1,			//被ダメージアニメーション。
+		enAnimationClip_HitDamage2,			//被ダメージアニメーション。
+		enAnimationClip_Down1,				//HPが0。
+		enAnimationClip_Down2,				//HPが0。
+		enAnimationClip_Down3,				//HPが0。
 		enAnimationClip_PushLever,			//レバーを押すアニメーション。
 		enAnimationClip_Winner,				//勝利アニメーション。
 		enAnimationClip_Num,				//アニメーションの数。
 	};
 
-	AnimationClip		m_animationClips[enAnimationClip_Num];		//アニメーションクリップ。
-	FontRender m_fontRender;                         //文字の描画
-	FontRender m_fontRender2;                       //文字の描画
+	AnimationClip m_animationClips[enAnimationClip_Num];		//アニメーションクリップ。
+	FontRender m_fontRender;                          //文字の描画
+	FontRender m_fontRender2;                         //文字の描画
 	FontRender m_fontRender3;                         //文字の描画
 	FontRender m_fontRender4;                         //文字の描画
 	FontRender m_fontRender5;                         //文字の描画
+	FontRender m_fontRender6;                         //文字の描画
 	EnPlayerState m_playerState = enPlayerState_Idle;	//プレイヤーのステート(状態)を表す変数。
 
 	CharacterController m_characterController;       //キャラクターコントローラー。
-	SphereCollider m_sphereCollider;		      //円型のコライダー。
-	Vector3 m_position;			                 //座標。
-	Vector3 m_position2;			             //座標2。
-	Vector3 m_moveSpeed;				        //移動速度。
-	Quaternion m_rotation;                  //クウォータニオン
-	ModelRender m_modelRender;             //モデルレンダー
-	ModelRender m_modelRender2;             //モデルレンダー2
-	Vector3 m_forward;                    //キャラクターの前方向のベクトル
+	SphereCollider m_sphereCollider;		         //円型のコライダー。
+	Vector3 m_position;			                     //座標。
+	Vector3 m_position2;			                 //座標2。
+	Vector3 m_moveSpeed=Vector3::Zero;				 //移動速度。
+	Vector3 m_scale;                                 //大きさ。
+	Quaternion m_rotation;                           //クウォータニオン
+	ModelRender m_modelRender;                       //モデルレンダー
+	ModelRender m_modelRender2;                      //モデルレンダー2
+	Vector3 m_forward;                               //キャラクターの前方向のベクトル
 
 	float whitetimer = 0.0f;
 	float blacktimer = 0.0f;
 	float m_attacktimer = 0.0f;
+	float m_hitdamagetimer = 0.0f;
 	bool m_isUnderAttack = false;					//攻撃中ならtrue。
 	bool m_isUnderAttack2 = false;					//攻撃中ならtrue。
+	int m_hitdamagestate = false;                   //被ダメがあったらtrueにする。
 	int m_attackstate = false;
-	int whiteChangestate = true;
-	int blackChangestate = true;
-	int m_LeftHandId = -1;                   //ボーンのID。
-	int m_RightHandId = -1;                    //ボーンのID。
-	int worldstate = 0;//０が白,１が黒
+	int hitdamagecooltime = false;                 //被ダメージ中ならtrue。そうでないならfalse。
+	int m_LeftHandId = -1;                         //ボーンのID。
+	int m_RightHandId = -1;                        //ボーンのID。
+	int m_playerhp = 5;//プレイヤーのHP
 	int player_attackmotion = 0;//1が通常1,2が通常2,0が通常3
 };

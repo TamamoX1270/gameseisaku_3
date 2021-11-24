@@ -18,6 +18,8 @@
     <ClCompile Include="Wall.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Wallbreak.cpp" />
+    <ClCompile Include="Breakrock.cpp" />
+    <ClCompile Include="MoveFloor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -31,5 +33,7 @@
     <ClInclude Include="Wall.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Wallbreak.h" />
+    <ClInclude Include="Breakrock.h" />
+    <ClInclude Include="MoveFloor.h" />
   </ItemGroup>
 </Project>

@@ -129,6 +129,7 @@ namespace nsK2Engine {
         {
             rc.SetRenderTarget(m_mainRenderTarget.GetRTVCpuDescriptorHandle(), m_zprepassRenderTarget.GetDSVCpuDescriptorHandle());
         }
+
         /// <summary>
         /// ソフトシャドウを行うか判定。
         /// </summary>

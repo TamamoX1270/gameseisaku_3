@@ -32,26 +32,45 @@ namespace nsK2Engine {
 
 	bool SkyCube::Start()
 	{
-		ModelInitData initData;
-		//tkmファイルのファイルパスを指定する。
-		initData.m_tkmFilePath = "Assets/modelData/preset/sky.tkm";
-		//シェーダーファイルのファイルパスを指定する。
-		initData.m_fxFilePath = "Assets/shader/SkyCubeMap.fx";
-		initData.m_vsEntryPointFunc = "VSMain";
-		initData.m_psEntryPointFunc = "PSMain";
+			ModelInitData initData;
+			//tkmファイルのファイルパスを指定する。
+			initData.m_tkmFilePath = "Assets/modelData/preset/sky.tkm";
+			//シェーダーファイルのファイルパスを指定する。
+			initData.m_fxFilePath = "Assets/shader/SkyCubeMap.fx";
+			initData.m_vsEntryPointFunc = "VSMain";
+			initData.m_psEntryPointFunc = "PSMain";
+
+			for (int i = 0; i < enSkyCubeType_Num; i++) {
+				m_texture[i].InitFromDDSFile(m_textureFilePaths[i]);
+			}
 			
-		for( int i = 0; i < enSkyCubeType_Num; i++ ){
-			m_texture[i].InitFromDDSFile(m_textureFilePaths[i]);
-		}
+			initData.m_expandShaderResoruceView[0] = &m_texture[m_type];
+			initData.m_expandConstantBuffer = &m_luminance;
+			initData.m_expandConstantBufferSize = sizeof(m_luminance);
+			m_modelRender.InitForwardRendering(initData);
+			m_modelRender.SetShadowCasterFlag(false);
+			m_modelRender.SetTRS(m_position, g_quatIdentity, m_scale);
+			m_modelRender.Update();
+		
 
-		initData.m_expandShaderResoruceView[0] = &m_texture[m_type];
-		initData.m_expandConstantBuffer = &m_luminance;
-		initData.m_expandConstantBufferSize = sizeof(m_luminance);
-		m_modelRender.InitForwardRendering(initData);
-		m_modelRender.SetShadowCasterFlag(false);
-		m_modelRender.SetTRS(m_position, g_quatIdentity, m_scale);
-		m_modelRender.Update();
-
+			//ここから
+			ModelInitData initData2;
+			//tkmファイルのファイルパスを指定する。
+			initData2.m_tkmFilePath = "Assets/modelData/preset/sky.tkm";
+			//シェーダーファイルのファイルパスを指定する。
+			initData2.m_fxFilePath = "Assets/shader/SkyCubeMap.fx";
+			initData2.m_vsEntryPointFunc = "VSMain";
+			initData2.m_psEntryPointFunc = "PSMain";
+			
+			initData2.m_expandShaderResoruceView[0] = &m_texture[m_type2];
+			initData2.m_expandConstantBuffer = &m_luminance2;
+			initData2.m_expandConstantBufferSize = sizeof(m_luminance2);
+			m_modelRender2.InitForwardRendering(initData2);
+			m_modelRender2.SetShadowCasterFlag(false);
+			m_modelRender2.SetTRS(m_position2, g_quatIdentity, m_scale2);
+			m_modelRender2.Update();
+			//ここを増やした余
+			
 		return true;
 	}
 
@@ -61,12 +80,21 @@ namespace nsK2Engine {
 		{
 			m_modelRender.SetTRS(m_position, g_quatIdentity, m_scale);
 			m_modelRender.Update();
+			m_modelRender2.SetTRS(m_position2, g_quatIdentity, m_scale2);
+			m_modelRender2.Update();
 			m_isDirty = false;
 		}
 	}
 
 	void SkyCube::Render(RenderContext& rc)
 	{
-		m_modelRender.Draw(rc);
+		if (m_worldstate == 0)
+		{
+			m_modelRender.Draw(rc);
+		}
+		if (m_worldstate == 1)
+		{
+			m_modelRender2.Draw(rc);
+		}
 	}
 }
