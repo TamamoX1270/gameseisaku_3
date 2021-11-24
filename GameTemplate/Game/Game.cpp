@@ -85,7 +85,7 @@ bool Game::Start()
 			//動く床オブジェクトを作成する。
 			m_movefloor = NewGO<MoveFloor>(0, "movefloor");
 			//座標を設定する。
-			m_movefloor->SetPosition(objData.position);
+			//m_movefloor->SetPosition(objData.position);
 			//大きさを設定する。
 			m_movefloor->SetScale(objData.scale);
 			//回転を設定する。

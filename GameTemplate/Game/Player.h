@@ -163,12 +163,15 @@ private:
 	Vector3 m_position;			                     //座標。
 	Vector3 m_position2;			                 //座標2。
 	Vector3 m_moveSpeed=Vector3::Zero;				 //移動速度。
+	Vector3 m_lstick;                                 //スティックの入力量
 	Vector3 m_scale;                                 //大きさ。
 	Quaternion m_rotation;                           //クウォータニオン
 	ModelRender m_modelRender;                       //モデルレンダー
 	ModelRender m_modelRender2;                      //モデルレンダー2
 	Vector3 m_forward;                               //キャラクターの前方向のベクトル
 
+	float lStick_x = 0.0f;
+	float lStick_y = 0.0f;
 	float whitetimer = 0.0f;
 	float blacktimer = 0.0f;
 	float m_attacktimer = 0.0f;

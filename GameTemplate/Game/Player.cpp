@@ -118,10 +118,14 @@ void Player::Move()
 			m_moveSpeed.x = 0.0f;
 			m_moveSpeed.z = 0.0f;
 			m_position2 = m_position;
+			/*
 			//このフレームの移動量を求める。
 			//左スティックの入力量を受け取る。
 			float lStick_x = g_pad[0]->GetLStickXF();
 			float lStick_y = g_pad[0]->GetLStickYF();
+			*/
+			lStick_x = g_pad[0]->GetLStickXF();
+			lStick_y = g_pad[0]->GetLStickYF();
 			//カメラの前方方向と右方向を取得。
 			Vector3 cameraForward = g_camera3D->GetForward();
 			Vector3 cameraRight = g_camera3D->GetRight();
@@ -133,6 +137,8 @@ void Player::Move()
 			//XZ成分の移動速度をクリア。
 			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
 			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+			m_lstick += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+			m_lstick += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
 
 			//キャラクターコントローラーを使用して、座標を更新。
 			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
@@ -172,11 +178,14 @@ void Player::Move()
 		}
 		else
 		{
+			m_lstick.x = 0.0f;
+			m_lstick.z = 0.0f;
+
 			m_position2 = m_position;
 			//このフレームの移動量を求める。
 			//左スティックの入力量を受け取る。
-			float lStick_x = g_pad[0]->GetLStickXF();
-			float lStick_y = g_pad[0]->GetLStickYF();
+			lStick_x = g_pad[0]->GetLStickXF();
+			lStick_y = g_pad[0]->GetLStickYF();
 			//カメラの前方方向と右方向を取得。
 			Vector3 cameraForward = g_camera3D->GetForward();
 			Vector3 cameraRight = g_camera3D->GetRight();
@@ -185,6 +194,25 @@ void Player::Move()
 			cameraForward.Normalize();
 			cameraRight.y = 0.0f;
 			cameraRight.Normalize();
+			
+			//XZ成分の移動速度をクリア。
+			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+			m_lstick += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+			m_lstick += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+
+			//重力を発生させる。
+			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
+			//キャラクターコントローラーを使用して、座標を更新。
+			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+			if (m_characterController.IsOnGround()) {
+				//地面についた。
+				m_moveSpeed.y = 0.0f;
+			}
+			//絵描きさんに座標を教える。
+			m_modelRender.SetPosition(m_position);
+			m_modelRender2.SetPosition(m_position);
+			/*
 			//XZ成分の移動速度をクリア。
 			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
 			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
@@ -200,6 +228,7 @@ void Player::Move()
 			//絵描きさんに座標を教える。
 			m_modelRender.SetPosition(m_position);
 			m_modelRender2.SetPosition(m_position);
+			*/
 
 			m_moveSpeed.x = 0.0f;
 			m_moveSpeed.z = 0.0f;
@@ -390,11 +419,20 @@ void Player::ProcessCommonStateTransition()
 		if (m_attackstate == false)
 		{
 			//xかzの移動速度があったら(スティックの入力があったら)。
+			if (fabsf(lStick_x) >= 0.01f || fabsf(lStick_y) >= 0.01f)
+			{
+				//ステートを2(歩き)にする。
+				m_playerState = enPlayerState_Walk;
+			}
+			/*
 			if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
 			{
 				//ステートを2(歩き)にする。
 				m_playerState = enPlayerState_Walk;
 			}
+			*/
+
+
 			//xとzの移動速度が無かったら(スティックの入力が無かったら)。
 			else
 			{
@@ -406,6 +444,13 @@ void Player::ProcessCommonStateTransition()
 		{
 			if (m_attacktimer >= 3.0f)
 			{
+				//xかzの移動速度があったら(スティックの入力があったら)。
+				if (fabsf(lStick_x) >= 0.01f || fabsf(lStick_y) >= 0.01f)
+				{
+					//ステートを2(歩き)にする。
+					m_playerState = enPlayerState_Walk;
+				}
+				/*
 				if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
 				{
 					//ステートを2(歩き)にする。
@@ -417,6 +462,7 @@ void Player::ProcessCommonStateTransition()
 					//ステートを0(待機)にする。
 					m_playerState = enPlayerState_Idle;
 				}
+				*/
 			}
 		}
 	}
@@ -652,6 +698,20 @@ void Player::Timer()
 void Player::Rotation()
 {
 	//xかzの移動速度があったら(スティックの入力があったら)。
+	if (fabsf(lStick_x) >= 0.01f || fabsf(lStick_y) >= 0.01f)
+	{
+		//キャラクターの方向を変える。
+		m_rotation.SetRotationYFromDirectionXZ(m_lstick);
+		//絵描きさんに回転を教える。
+		m_modelRender.SetRotation(m_rotation);
+		m_modelRender2.SetRotation(m_rotation);
+		//プレイヤーの前方向のベクトルを設定する。
+		m_forward = Vector3(0.0f, 0.0f, 1.0f);
+		//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
+		m_rotation.Apply(m_forward);
+	}
+	
+	//xかzの移動速度があったら(スティックの入力があったら)。
 	if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
 	{
 		//キャラクターの方向を変える。
@@ -664,6 +724,7 @@ void Player::Rotation()
 		//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
 		m_rotation.Apply(m_forward);
 	}
+	
 }
 
 void Player::Collision()

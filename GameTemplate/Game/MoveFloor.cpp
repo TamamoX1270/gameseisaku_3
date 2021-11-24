@@ -125,14 +125,14 @@ void MoveFloor::Move()
 			m_MovingFloorState = enMovingFloor_None;
 			m_MoveFloorState = false;
 		}
-		//動く床の移動速度をキャラクターの移動速度に加算。
-		FindGO<Player>("player")->AddMoveSpeed(moveSpeed);
 	}
 	m_modelRender.SetPosition(m_position);
 	//コリジョンオブジェクトとプレイヤーのキャラクターコントローラーが。
     //衝突したら。(キャラクターが動く床の上に乗ったら)。
 	if (m_collisionObject->IsHit(FindGO<Player>("player")->GetCharacterController()) == true)
 	{
+		//動く床の移動速度をキャラクターの移動速度に加算。
+		FindGO<Player>("player")->AddMoveSpeed(moveSpeed);
 		m_MoveFloorState = true;
 	}
 	/*
