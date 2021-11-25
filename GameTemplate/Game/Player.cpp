@@ -96,144 +96,47 @@ void Player::Update() //常に1秒間に60回呼び出される
 
 void Player::Move()
 {
+	m_position2 = m_position;
 	//リフトが動いてない時の処理。
 	if (FindGO<MoveFloor>("movefloor")->GetMoveFloor() == false)
 	{
+		m_moveSpeed.x = 0.0f;
+		m_moveSpeed.z = 0.0f;
 		//移動できない状態であれば、移動処理はしない。
 		if (IsEnableMove() == false)
 		{
-			m_moveSpeed.x = 0.0f;
-			m_moveSpeed.z = 0.0f;
-			m_position2 = m_position;
-
-			//キャラクターコントローラーを使用して、座標を更新。
-			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
-			if (m_characterController.IsOnGround()) {
-				//地面についた。
-				m_moveSpeed.y = 0.0f;
-			}
+			IsEnableMoveTask();
 		}
 		else
 		{
-			m_moveSpeed.x = 0.0f;
-			m_moveSpeed.z = 0.0f;
-			m_position2 = m_position;
-			/*
-			//このフレームの移動量を求める。
-			//左スティックの入力量を受け取る。
-			float lStick_x = g_pad[0]->GetLStickXF();
-			float lStick_y = g_pad[0]->GetLStickYF();
-			*/
-			lStick_x = g_pad[0]->GetLStickXF();
-			lStick_y = g_pad[0]->GetLStickYF();
-			//カメラの前方方向と右方向を取得。
-			Vector3 cameraForward = g_camera3D->GetForward();
-			Vector3 cameraRight = g_camera3D->GetRight();
-			//XZ平面での前方方向、右方向に変換する。
-			cameraForward.y = 0.0f;
-			cameraForward.Normalize();
-			cameraRight.y = 0.0f;
-			cameraRight.Normalize();
-			//XZ成分の移動速度をクリア。
-			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
-			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
-			m_lstick += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
-			m_lstick += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
-
-			//キャラクターコントローラーを使用して、座標を更新。
-			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
-			if (m_characterController.IsOnGround()) {
-				//地面についた。
-				m_moveSpeed.y = 0.0f;
-			}
+			Movetask();
 		}
-
-		//絵描きさんに座標を教える。
-		m_modelRender.SetPosition(m_position);
-		m_modelRender2.SetPosition(m_position);
-
 	}
 	else
 	{
 		//移動できない状態であれば、移動処理はしない。
 		if (IsEnableMove() == false)
 		{
-			m_position2 = m_position;
-
 			//重力を発生させる。
 			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
-
-			//キャラクターコントローラーを使用して、座標を更新。
-			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
-			if (m_characterController.IsOnGround()) {
-				//地面についた。
-				m_moveSpeed.y = 0.0f;
-			}
-			//絵描きさんに座標を教える。
-			m_modelRender.SetPosition(m_position);
-			m_modelRender2.SetPosition(m_position);
-
-			m_moveSpeed.x = 0.0f;
-			m_moveSpeed.z = 0.0f;
+			IsEnableMoveTask();
 		}
 		else
 		{
 			m_lstick.x = 0.0f;
 			m_lstick.z = 0.0f;
-
-			m_position2 = m_position;
-			//このフレームの移動量を求める。
-			//左スティックの入力量を受け取る。
-			lStick_x = g_pad[0]->GetLStickXF();
-			lStick_y = g_pad[0]->GetLStickYF();
-			//カメラの前方方向と右方向を取得。
-			Vector3 cameraForward = g_camera3D->GetForward();
-			Vector3 cameraRight = g_camera3D->GetRight();
-			//XZ平面での前方方向、右方向に変換する。
-			cameraForward.y = 0.0f;
-			cameraForward.Normalize();
-			cameraRight.y = 0.0f;
-			cameraRight.Normalize();
-			
-			//XZ成分の移動速度をクリア。
-			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
-			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
-			m_lstick += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
-			m_lstick += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
-
-			//重力を発生させる。
-			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
-			//キャラクターコントローラーを使用して、座標を更新。
-			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
-			if (m_characterController.IsOnGround()) {
-				//地面についた。
-				m_moveSpeed.y = 0.0f;
-			}
-			//絵描きさんに座標を教える。
-			m_modelRender.SetPosition(m_position);
-			m_modelRender2.SetPosition(m_position);
-			/*
-			//XZ成分の移動速度をクリア。
-			m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
-			m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
-
-			//重力を発生させる。
-			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
-			//キャラクターコントローラーを使用して、座標を更新。
-			m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
-			if (m_characterController.IsOnGround()) {
-				//地面についた。
-				m_moveSpeed.y = 0.0f;
-			}
-			//絵描きさんに座標を教える。
-			m_modelRender.SetPosition(m_position);
-			m_modelRender2.SetPosition(m_position);
-			*/
-
-			m_moveSpeed.x = 0.0f;
-			m_moveSpeed.z = 0.0f;
-
+			Movetask();
 		}
+	}
+	//絵描きさんに座標を教える。
+	m_modelRender.SetPosition(m_position);
+	m_modelRender2.SetPosition(m_position);
+	//もしリフトが動いているなら
+	if (FindGO<MoveFloor>("movefloor")->GetMoveFloor() == true)
+	{
+		//ここでmovespeedを0にする。
+		m_moveSpeed.x = 0.0f;
+		m_moveSpeed.z = 0.0f;
 	}
 }
 void Player::ProcessIdleStateTransition()

@@ -78,6 +78,46 @@ public:
 	void Moji();
 	void Timer();
 
+	void IsEnableMoveTask()
+	{
+		//キャラクターコントローラーを使用して、座標を更新。
+		m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+		if (m_characterController.IsOnGround()) {
+			//地面についた。
+			m_moveSpeed.y = 0.0f;
+		}
+	}
+	void Movetask()
+	{
+		//このフレームの移動量を求める。
+		//左スティックの入力量を受け取る。
+		lStick_x = g_pad[0]->GetLStickXF();
+		lStick_y = g_pad[0]->GetLStickYF();
+		//カメラの前方方向と右方向を取得。
+		Vector3 cameraForward = g_camera3D->GetForward();
+		Vector3 cameraRight = g_camera3D->GetRight();
+		//XZ平面での前方方向、右方向に変換する。
+		cameraForward.y = 0.0f;
+		cameraForward.Normalize();
+		cameraRight.y = 0.0f;
+		cameraRight.Normalize();
+		//XZ成分の移動速度をクリア。
+		m_moveSpeed += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+		m_moveSpeed += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+		m_lstick += cameraForward * lStick_y * 50.0f;	//奥方向への移動速度を加算。
+		m_lstick += cameraRight * lStick_x * 50.0f;		//右方向への移動速度を加算。
+
+		//重力を発生させる。
+		m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
+
+		//キャラクターコントローラーを使用して、座標を更新。
+		m_position = m_characterController.Execute(m_moveSpeed, g_gameTime->GetFrameDeltaTime());
+		if (m_characterController.IsOnGround()) {
+			//地面についた。
+			m_moveSpeed.y = 0.0f;
+		}
+	}
+
 	void SetPosition(const Vector3& position)
 	{
 		m_position = position;

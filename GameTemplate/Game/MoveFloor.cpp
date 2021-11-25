@@ -26,7 +26,7 @@ MoveFloor::~MoveFloor()
 bool MoveFloor::Start()
 {
 	m_modelRender.Init("Assets/modelData/stage/movefloor.tkm");
-	//m_modelRender.SetPosition(m_position);
+	m_modelRender.SetPosition(m_position);
 	m_modelRender.Update();
 	m_physicsStaticObject.CreateFromModel(m_modelRender.GetModel(), m_modelRender.GetModel().GetWorldMatrix());
 
