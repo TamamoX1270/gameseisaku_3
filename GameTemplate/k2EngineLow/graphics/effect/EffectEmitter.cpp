@@ -21,6 +21,11 @@ namespace nsK2EngineLow {
 	{
 		m_effect.Update();
 
+		if (m_isAutoDelete == false)
+		{
+			return;
+		}
+
 		if (!IsPlay())
 		{
 			DeleteGO(this);

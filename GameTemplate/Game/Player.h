@@ -87,7 +87,20 @@ public:
 			m_moveSpeed.y = 0.0f;
 		}
 	}
-	void Movetask()
+	void HitTask()
+	{
+		//hitdamagecooltimeがfalseの時
+		if (hitdamagecooltime == false)
+		{
+			//hpを１減らす
+			m_playerhp--;
+		}
+		//被ダメクールタイムをtrueにする。
+		hitdamagecooltime = true;
+		//被ダメステートをtrueにする。
+		m_hitdamagestate = true;
+	}
+	void MoveTask()
 	{
 		//このフレームの移動量を求める。
 		//左スティックの入力量を受け取る。
@@ -153,6 +166,10 @@ public:
 	const int GetPlayerhp() const
 	{
 		return m_playerhp;
+	}
+	const Vector3& GetForward()const
+	{
+		return m_forward;
 	}
 	enum EnPlayerState {
 		enPlayerState_Idle,					//待機。
@@ -223,6 +240,6 @@ private:
 	int hitdamagecooltime = false;                 //被ダメージ中ならtrue。そうでないならfalse。
 	int m_LeftHandId = -1;                         //ボーンのID。
 	int m_RightHandId = -1;                        //ボーンのID。
-	int m_playerhp = 5;//プレイヤーのHP
+	int m_playerhp = 9999999;//プレイヤーのHP
 	int player_attackmotion = 0;//1が通常1,2が通常2,0が通常3
 };

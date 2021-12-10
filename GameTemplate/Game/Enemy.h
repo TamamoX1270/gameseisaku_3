@@ -63,6 +63,10 @@ public:
     /// </summary>
     void ProcessChaseStateTransition();
     /// <summary>
+    /// 攻撃前のサークル出現処理
+    /// </summary>
+    void ProcessAttackCircleTransition();
+    /// <summary>
     /// 攻撃できる距離かどうか調べる。
     /// </summary>
     /// <returns>攻撃できるならtrue。</returns>
@@ -91,11 +95,23 @@ public:
     {
         return m_position;
     }
+    /// <summary>
+    /// 0が白、1が黒
+    /// </summary>
+    /// <returns></returns>
+    const int& GetEnemyAttackState()const
+    {
+        return m_enemyattackstate;
+    }
+
+private:
     enum EnEnemyState {
         enEnemyState_Idle,					//待機。
         enEnemyState_Chase,					//追跡。
         enEnemyState_Attack1,				//攻撃1。
         enEnemyState_Attack2,				//攻撃2。
+        enEnemyState_Attackcircledark,
+        enEnemyState_Attackcirclewhite,
         enEnemyState_HitDamage1,			//被ダメージアニメーション。
         enEnemyState_HitDamage2,			//被ダメージアニメーション2。
         enEnemyState_Down1,                 //ダウンアニメーション。
@@ -104,8 +120,6 @@ public:
         enEnemyState_ReceiveDamage,			//被ダメージ。
         enEnemyState_Down,					//ダウン。
     };
-
-private:
     enum EnAnimationClip {
         enAnimationClip_Idle,					//待機アニメーション。
         enAnimationClip_Walk,					//歩きアニメーション。
@@ -131,10 +145,13 @@ private:
     Vector3                 m_moveSpeed;                    //移動速度。
     Vector3                 m_playerposition;               //プレイヤーの位置
     Vector3					m_forward = Vector3::AxisZ;     //エネミーの正面ベクトル。
+    Vector3                 m_efpos;
     Quaternion				m_rotation;			            //回転。
     PhysicsStaticObject		m_physicsStaticObject;          //静的物理オブジェクト。
     CollisionObject* m_collisionObject;
     Player* m_player = nullptr;
+    EffectEmitter* m_effect1 = nullptr;
+    EffectEmitter* m_effect2 = nullptr;
 
     FontRender m_fontRender;                                //文字の描画
 
@@ -142,6 +159,7 @@ private:
     int m_attackstate = false;                              //攻撃中ならtrue。
     int hitdamagecooltime = false;                          //被ダメージ中ならtrue。そうでないならfalse。
     int m_enemyattackmotion = 0;                            //1が通常1,0が通常2
+    int m_enemyattackstate = 0;                             //0が白攻撃、1が黒攻撃
     float m_chaseTimer = 0.0f;                              //追跡タイマー。
     float m_idleTimer = 0.0f;		                        //待機タイマー。
     int m_LeftHandId = -1;                                  //ボーンのID。

@@ -8,6 +8,8 @@
 
 //CollisionObjectを使用するために、ファイルをインクルードする。
 #include "collision/CollisionObject.h"
+//EffectEmitterを使用する時はファイルをインクルードする必要がある。
+#include "graphics/effect/EffectEmitter.h"
 
 bool Enemy::Start()
 {
@@ -33,9 +35,11 @@ bool Enemy::Start()
 	/*
 	m_animationClips[enAnimationClip_MagicAttack].Load("Assets/animData/vampire/magicattack.tka");
 	m_animationClips[enAnimationClip_MagicAttack].SetLoopFlag(false);
-	m_animationClips[enAnimationClip_Winner].Load("Assets/animData/vampire/winner.tka");
-	m_animationClips[enAnimationClip_Winner].SetLoopFlag(false);
 	*/
+
+	//エフェクトを読み込む。
+	EffectEngine::GetInstance()->ResistEffect(1, u"Assets/effect/circlewhite.efk");
+	EffectEngine::GetInstance()->ResistEffect(2, u"Assets/effect/circledark.efk");
 
 	//敵のモデルを読み込む
 	m_enemy.Init("Assets/modelData/vampire.tkm", m_animationClips, enAnimationClip_Num, enModelUpAxisZ);
@@ -102,13 +106,18 @@ void Enemy::Update()
 	//フォントの大きさを設定。
 	m_fontRender.SetScale(1.0f);
 
+
 	Chase();
+
 	Attack();
 	Rotation();
 	Collision();
 	PlayAnimation();
 	ManageState();
+	ProcessAttackCircleTransition();
 
+	m_efpos = m_position;
+	m_efpos.y += 0.1f;
 	//モデルの更新処理。
 	m_enemy.Update();
 	m_enemy2.Update();
@@ -315,7 +324,7 @@ void Enemy::MakeAttackCollision()
 	//球状のコリジョンを作成する。
 	collisionObject->CreateSphere(collisionPosition,        //座標。
 		Quaternion::Identity,                               //回転。
-		1.5f                                               //半径。
+		3.0f                                               //半径。
 	);
 	collisionObject->SetName("enemy_attack");
 
@@ -336,7 +345,7 @@ void Enemy::MakeAttackCollision2()
 	//球状のコリジョンを作成する。
 	collisionObject2->CreateSphere(collisionPosition2,        //座標。
 		Quaternion::Identity,                               //回転。
-		1.5f                                               //半径。
+		3.0f                                               //半径。
 	);
 	collisionObject2->SetName("enemy_attack2");
 
@@ -393,26 +402,52 @@ void Enemy::ProcessCommonStateTransition()
 			//攻撃できる距離なら。
 			else
 			{
+				if (m_effect1 != nullptr|| m_effect2 != nullptr)
+				{
+					//待機ステートに遷移する。
+					m_enemyState = enEnemyState_Idle;
+					return;
+				}
 				//乱数によって、攻撃するか待機させるかを決定する。	
 				int ram = rand() % 100;
 				if (ram > 20)
 				{
 					if (ram > 20 && ram <= 60)
 					{
+						/*
 						m_enemyState = enEnemyState_Attack1;
 						m_enemyattackmotion = 1;
 						m_isUnderAttack = false;
-						return;
+						*/
+						
+						
+						m_effect1 = NewGO<EffectEmitter>(0);
+						m_effect1->Init(1);
+						m_effect1->SetScale({ 8.0f,8.0f,8.0f });
+						m_effect1->SetPosition(m_efpos);
+						m_effect1->Play();
+						m_effect1->SetIsAutoDelete(false);
+						m_enemyattackstate = 0;
+						enEnemyState_Attackcirclewhite;
+						
 					}
 					else
 					{
-						/*
-						//待機ステートに遷移する。
-						m_enemyState = enEnemyState_Idle;
-						*/
+					/*
 						m_enemyState = enEnemyState_Attack2;
 						m_enemyattackmotion = 0;
 						m_isUnderAttack = false;
+						*/
+						
+						m_effect2 = NewGO<EffectEmitter>(0);
+						m_effect2->Init(2);
+						m_effect2->SetScale({ 8.0f,8.0f,8.0f });
+						m_effect2->SetPosition(m_efpos);
+						m_effect2->Play();
+						m_effect2->SetIsAutoDelete(false);
+						m_enemyattackstate = 1;
+						enEnemyState_Attackcircledark;
+						
 						return;
 					}
 				}
@@ -502,8 +537,39 @@ void Enemy::ProcessDownStateTransition()
 	//被ダメージアニメーションの再生が終わったら。
 	if (m_enemy.IsPlayingAnimation() == false)
 	{
+		FindGO<Game>("game")->SetKillCount();
 		DeleteGO(this);
 	}
+}
+void Enemy::ProcessAttackCircleTransition()
+{
+
+	if (m_effect1 != nullptr)
+	{
+		m_effect1->SetPosition(m_efpos);
+
+		if (m_effect1->IsPlay() == false)
+		{
+				m_enemyState = enEnemyState_Attack1;
+				m_enemyattackmotion = 1;
+				m_isUnderAttack = false;
+				DeleteGO(m_effect1);
+				m_effect1 = nullptr;
+		}
+	}
+	else if (m_effect2 != nullptr)
+	{
+		m_effect2->SetPosition(m_efpos);
+		if (m_effect2->IsPlay() == false)
+		{
+			m_enemyState = enEnemyState_Attack2;
+			m_enemyattackmotion = 0;
+			m_isUnderAttack = false;
+			DeleteGO(m_effect2);
+			m_effect2 = nullptr;
+		}
+	}
+	
 }
 void Enemy::ManageState()
 {
@@ -528,6 +594,14 @@ void Enemy::ManageState()
 	case enEnemyState_Attack2:
 		//攻撃ステートのステート遷移処理。
 		ProcessAttackStateTransition();
+		break;
+	case enEnemyState_Attackcirclewhite:
+		//攻撃前のサークル生成時
+		ProcessAttackCircleTransition();
+		break;
+	case enEnemyState_Attackcircledark:
+		//攻撃前のサークル生成時
+		ProcessAttackCircleTransition();
 		break;
 		//エネミーステートがenPlayerState_HitDamage1だったら。
 	case  enEnemyState_HitDamage1:

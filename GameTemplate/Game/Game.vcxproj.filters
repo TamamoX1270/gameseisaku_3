@@ -20,6 +20,10 @@
     <ClCompile Include="Wallbreak.cpp" />
     <ClCompile Include="Breakrock.cpp" />
     <ClCompile Include="MoveFloor.cpp" />
+    <ClCompile Include="Mediumboss.cpp" />
+    <ClCompile Include="GameClear.cpp" />
+    <ClCompile Include="Title.cpp" />
+    <ClCompile Include="MoveFloorWall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -35,5 +39,9 @@
     <ClInclude Include="Wallbreak.h" />
     <ClInclude Include="Breakrock.h" />
     <ClInclude Include="MoveFloor.h" />
+    <ClInclude Include="Mediumboss.h" />
+    <ClInclude Include="GameClear.h" />
+    <ClInclude Include="Title.h" />
+    <ClInclude Include="MoveFloorWall.h" />
   </ItemGroup>
 </Project>

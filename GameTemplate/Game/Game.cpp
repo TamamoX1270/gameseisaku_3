@@ -5,9 +5,12 @@
 #include "Wallbreak.h"
 #include "Breakrock.h"
 #include "Enemy.h"
+#include "Mediumboss.h"
 #include "BackGround.h"
 #include "GameCamera.h"
 #include "MoveFloor.h"
+#include "MoveFloorWall.h"
+#include "GameClear.h"
 
 //スカイキューブ。
 #include "nature/SkyCube.h"
@@ -60,8 +63,7 @@ bool Game::Start()
 			m_backGround->SetRotation(objData.rotation);
 			return true;
 		}
-		
-		//名前がenemyだったら。
+		//名前がvampire_a_lusthだったら。
 		else if (objData.EqualObjectName(L"vampire_a_lusth") == true)
 		{
 			//エネミーのオブジェクトを作成する。
@@ -73,19 +75,18 @@ bool Game::Start()
 			//大きさを設定する。
 			enemy->SetScale(objData.scale);
 			//HPを5に設定する。
-			enemy->SetHP(5);
+			enemy->SetHP(1);
 			//作成したエネミーの和を数えたいので、+1する。
 			m_numEnemy++;
 			return true;
 		}
-		
 		//名前がmovefloorだったら。
 		else if (objData.EqualObjectName(L"movefloor") == true)
 		{
 			//動く床オブジェクトを作成する。
 			m_movefloor = NewGO<MoveFloor>(0, "movefloor");
 			//座標を設定する。
-			//m_movefloor->SetPosition(objData.position);
+			m_movefloor->SetPosition(objData.position);
 			//大きさを設定する。
 			m_movefloor->SetScale(objData.scale);
 			//回転を設定する。
@@ -110,21 +111,116 @@ bool Game::Start()
 
 	return true;
 }
+
 Game::~Game()
 {
 	DeleteGO(m_backGround);
-	DeleteGO(m_wallbreak);
 	DeleteGO(m_gameCamera);
 	DeleteGO(m_enemy);
 	DeleteGO(m_player);
 	DeleteGO(m_skyCube);
+	DeleteGO(m_movefloor);
+	DeleteGO(m_breakrock);
 }
 
+void Game::KnockCount()
+{
+	if (m_enemykillcount >= 4&& m_MediumbossNewGO == false)
+	{
+		m_enemykillcount = 0;
+		m_MediumbossNewGO = true;
+	}
+	else if (m_MediumbossNewGO == true)
+	{
+		BossNewGO();
+		m_MediumbossNewGO = false;
+	}
+	if (m_BossKill == true)
+	{
+		NewGO<GameClear>(0,"gameclear");
+		DeleteGO(this);
+	}
+}
+
+void Game::BossNewGO()
+{
+	//中ボスのオブジェクトを作成する。
+	Mediumboss* mediumboss = NewGO<Mediumboss>(0, "mediumboss");
+	mediumboss->SetEntry(true);
+	m_gameCamera->SetCameraState(1);
+	//レベルを構築する。
+	m_levelRender.Init("Assets/level3D/stagelevel.tkl",
+		[&](LevelObjectData& objData)
+	{
+		//名前がmaw_j_laygoだったら。
+		if (objData.EqualObjectName(L"maw_j_laygo") == true)
+		{
+		//座標を設定する。
+		mediumboss->SetPosition(objData.position);
+		//回転を設定する。
+		mediumboss->SetRotation(objData.rotation);
+		//大きさを設定する。
+		mediumboss->SetScale(objData.scale);
+		//HPを5に設定する。
+		mediumboss->SetHP(1);
+		//作成したエネミーの和を数えたいので、+1する。
+		m_numEnemy++;
+		return true;
+		}
+		return true;
+	});
+}
+
+void Game::MoveFloorWallNewGO()
+{
+	//動く床の壁オブジェクトを作成する。
+	m_movefloorwall = NewGO<MoveFloorWall>(0, "movefloorwall");
+	//レベルを構築する。
+	m_levelRender.Init("Assets/level3D/stagelevel.tkl",
+		[&](LevelObjectData& objData)
+	{
+		//名前がmovefloorwallだったら。
+		if (objData.EqualObjectName(L"movefloorwall") == true)
+		{
+			//座標を設定する。
+			m_movefloorwall->SetPosition(objData.position);
+			//大きさを設定する。
+			m_movefloorwall->SetScale(objData.scale);
+			//回転を設定する。
+			m_movefloorwall->SetRotation(objData.rotation);
+			return true;
+		}
+		return true;
+	});
+}
 
 void Game::Update()
 {
+	int b = m_enemykillcount;
+	wchar_t wcsbuf1[256];
+	swprintf_s(wcsbuf1, 256, L"てきたおしたかず%d", b);
+
+	//表示するテキストを設定。
+	m_fontRender.SetText(wcsbuf1);
+	//フォントの位置を設定。
+	m_fontRender.SetPosition(Vector3(-710.0f, -185.0f, 0.0f));
+	//フォントの大きさを設定。
+	m_fontRender.SetScale(3.0f);
+	//黒色に設定
+	m_fontRender.SetColor(g_vec4Black);
 	Timer();
 	WorldChanege();
+	KnockCount();
+	if (m_movefloorwallstate == true && m_floorwallcount == false)
+	{
+		MoveFloorWallNewGO();
+		m_floorwallcount = true;
+	}
+
+	if (FindGO<Player>("player")->GetPosition().y <= -900.0f)
+	{
+		DeleteGO(this);
+	}
 }
 
 void Game::Timer()
@@ -149,6 +245,18 @@ void Game::Timer()
 	if (blacktimer >= 2.0f && blackChangestate == false)
 	{
 		blackChangestate = true;
+	}
+
+	//カメラステートが1(中ボス出現後)ならタイマーを取得する。
+	if (m_gameCamera->GetCameraState() == 1)
+	{
+		m_gamecameratimer += g_gameTime->GetFrameDeltaTime();
+	}
+	//3秒経過したらプレイヤー視点に戻す。
+	if (m_gamecameratimer >= 4.0f)
+	{
+		m_gameCamera->SetCameraState(0);
+		m_gamecameratimer = 0.0f;
 	}
 }
 void Game::WorldChanege()
@@ -179,4 +287,5 @@ void Game::WorldChanege()
 
 void Game::Render(RenderContext& rc)
 {
+	m_fontRender.Draw(rc);
 }

@@ -95,7 +95,12 @@ namespace nsK2EngineLow {
 		{
 			return m_effect.IsPlay();
 		}
+		void SetIsAutoDelete(bool isAutoDelete)
+		{
+			m_isAutoDelete = isAutoDelete;
+		}
 	private:
 		Effect m_effect;					//エフェクト。
+		bool m_isAutoDelete = true;
 	};
 }

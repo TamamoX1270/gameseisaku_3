@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Player.h"
 #include "game.h"
+#include "Enemy.h"
 #include "Wall.h"
 #include "MoveFloor.h"
 
@@ -85,7 +86,14 @@ void Player::Update() //常に1秒間に60回呼び出される
 	Move();
 	ManageState();
 	PlayAnimation();
-	Collision();
+	//世界のステートと一致しない時被ダメージ
+	if (FindGO<Enemy>("enemy")->GetEnemyAttackState() == 0
+		&& FindGO<Game>("game")->GetWorldState() == 1||
+		FindGO<Enemy>("enemy")->GetEnemyAttackState() == 1
+		&& FindGO<Game>("game")->GetWorldState() == 0)
+	{
+		Collision();
+	}
 	Attack();
 	Timer();
 	Rotation();
@@ -100,16 +108,19 @@ void Player::Move()
 	//リフトが動いてない時の処理。
 	if (FindGO<MoveFloor>("movefloor")->GetMoveFloor() == false)
 	{
+		//移動速度を初期化
 		m_moveSpeed.x = 0.0f;
 		m_moveSpeed.z = 0.0f;
 		//移動できない状態であれば、移動処理はしない。
 		if (IsEnableMove() == false)
 		{
+			//移動出来ない時の処理を行う。
 			IsEnableMoveTask();
 		}
 		else
 		{
-			Movetask();
+			//移動処理を行う。
+			MoveTask();
 		}
 	}
 	else
@@ -119,13 +130,16 @@ void Player::Move()
 		{
 			//重力を発生させる。
 			m_moveSpeed.y -= 980.0f * g_gameTime->GetFrameDeltaTime();
+			//移動出来ない時の処理を行う。
 			IsEnableMoveTask();
 		}
 		else
 		{
+			//スティックの入力量を初期化。
 			m_lstick.x = 0.0f;
 			m_lstick.z = 0.0f;
-			Movetask();
+			//移動処理を行う。
+			MoveTask();
 		}
 	}
 	//絵描きさんに座標を教える。
@@ -327,15 +341,6 @@ void Player::ProcessCommonStateTransition()
 				//ステートを2(歩き)にする。
 				m_playerState = enPlayerState_Walk;
 			}
-			/*
-			if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
-			{
-				//ステートを2(歩き)にする。
-				m_playerState = enPlayerState_Walk;
-			}
-			*/
-
-
 			//xとzの移動速度が無かったら(スティックの入力が無かったら)。
 			else
 			{
@@ -353,19 +358,6 @@ void Player::ProcessCommonStateTransition()
 					//ステートを2(歩き)にする。
 					m_playerState = enPlayerState_Walk;
 				}
-				/*
-				if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
-				{
-					//ステートを2(歩き)にする。
-					m_playerState = enPlayerState_Walk;
-				}
-				//xとzの移動速度が無かったら(スティックの入力が無かったら)。
-				else
-				{
-					//ステートを0(待機)にする。
-					m_playerState = enPlayerState_Idle;
-				}
-				*/
 			}
 		}
 	}
@@ -528,7 +520,7 @@ void Player::MakeAttackCollision()
 void Player::MakeAttackCollision2()
 {
 	//コリジョンオブジェクトを作成する。
-	auto collisionObject2 = NewGO<CollisionObject>(1);
+	auto collisionObject2 = NewGO<CollisionObject>(0);
 
 	Vector3 collisionPosition2 = m_position;
 	//座標をプレイヤーの少し前に設定する。
@@ -600,34 +592,39 @@ void Player::Timer()
 
 void Player::Rotation()
 {
-	//xかzの移動速度があったら(スティックの入力があったら)。
-	if (fabsf(lStick_x) >= 0.01f || fabsf(lStick_y) >= 0.01f)
+	//リフトが動いているときの処理
+	if (FindGO<MoveFloor>("movefloor")->GetMoveFloor() == true)
 	{
-		//キャラクターの方向を変える。
-		m_rotation.SetRotationYFromDirectionXZ(m_lstick);
-		//絵描きさんに回転を教える。
-		m_modelRender.SetRotation(m_rotation);
-		m_modelRender2.SetRotation(m_rotation);
-		//プレイヤーの前方向のベクトルを設定する。
-		m_forward = Vector3(0.0f, 0.0f, 1.0f);
-		//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
-		m_rotation.Apply(m_forward);
+		//xかzの移動速度があったら(スティックの入力があったら)。
+		if (fabsf(lStick_x) >= 0.01f || fabsf(lStick_y) >= 0.01f)
+		{
+			//キャラクターの方向を変える。
+			m_rotation.SetRotationYFromDirectionXZ(m_lstick);
+			//絵描きさんに回転を教える。
+			m_modelRender.SetRotation(m_rotation);
+			m_modelRender2.SetRotation(m_rotation);
+			//プレイヤーの前方向のベクトルを設定する。
+			m_forward = Vector3(0.0f, 0.0f, 1.0f);
+			//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
+			m_rotation.Apply(m_forward);
+		}
 	}
-	
-	//xかzの移動速度があったら(スティックの入力があったら)。
-	if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
+	else
 	{
-		//キャラクターの方向を変える。
-		m_rotation.SetRotationYFromDirectionXZ(m_moveSpeed);
-		//絵描きさんに回転を教える。
-		m_modelRender.SetRotation(m_rotation);
-		m_modelRender2.SetRotation(m_rotation);
-		//プレイヤーの前方向のベクトルを設定する。
-		m_forward = Vector3(0.0f, 0.0f, 1.0f);
-		//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
-		m_rotation.Apply(m_forward);
+		//xかzの移動速度があったら(スティックの入力があったら)。
+		if (fabsf(m_moveSpeed.x) >= 0.001f || fabsf(m_moveSpeed.z) >= 0.001f)
+		{
+			//キャラクターの方向を変える。
+			m_rotation.SetRotationYFromDirectionXZ(m_moveSpeed);
+			//絵描きさんに回転を教える。
+			m_modelRender.SetRotation(m_rotation);
+			m_modelRender2.SetRotation(m_rotation);
+			//プレイヤーの前方向のベクトルを設定する。
+			m_forward = Vector3(0.0f, 0.0f, 1.0f);
+			//ベクトルにクウォータニオンを適応してプレイヤーの向きに回転させる
+			m_rotation.Apply(m_forward);
+		}
 	}
-	
 }
 
 void Player::Collision()
@@ -654,16 +651,7 @@ void Player::Collision()
 		//衝突していたら。
 		if (collision->IsHit(m_characterController) == true)
 		{
-			//hitdamagecooltimeがfalseの時
-			if (hitdamagecooltime == false)
-			{
-				//hpを１減らす
-				m_playerhp--;
-			}
-			//被ダメクールタイムをtrueにする。
-			hitdamagecooltime = true;
-			//被ダメステートをtrueにする。
-			m_hitdamagestate = true;
+			HitTask();
 			//被ダメージステートに遷移する。
 			m_playerState = enPlayerState_HitDamage1;
 		}
@@ -677,16 +665,7 @@ void Player::Collision()
 		//衝突していたら。
 		if (collision->IsHit(m_characterController) == true)
 		{
-			//hitdamagecooltimeがfalseの時
-			if (hitdamagecooltime == false)
-			{
-				//hpを１減らす
-				m_playerhp--;
-			}
-			//被ダメクールタイムをtrueにする。
-			hitdamagecooltime = true;
-			//被ダメステートをtrueにする。
-			m_hitdamagestate = true;
+			HitTask();
 			//被ダメージステートに遷移する。
 			m_playerState = enPlayerState_HitDamage2;
 		}

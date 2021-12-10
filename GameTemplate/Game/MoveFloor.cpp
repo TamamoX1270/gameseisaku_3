@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "MoveFloor.h"
+#include "MoveFloorWall.h"
 #include "stdafx.h"
 #include "Player.h"
+#include "Game.h"
 
 namespace
 {
-
-	Vector3	SCALE = Vector3(3.0f, 3.0, 3.0f);
 	float SPEED = 20.0f;
 	Vector3 COLLISION_HEIGHT = Vector3(0.0f, 1.5f, 0.0f);
 	Vector3	COLLISION_SIZE = Vector3(108.0f, 5.0f, 90.0f);
@@ -26,12 +26,10 @@ MoveFloor::~MoveFloor()
 bool MoveFloor::Start()
 {
 	m_modelRender.Init("Assets/modelData/stage/movefloor.tkm");
-	m_modelRender.SetPosition(m_position);
 	m_modelRender.Update();
+	//PhysicsStaticObjectを初期化。
 	m_physicsStaticObject.CreateFromModel(m_modelRender.GetModel(), m_modelRender.GetModel().GetWorldMatrix());
-
 	m_collisionObject = NewGO<CollisionObject>(0, "collisionObject");
-
 	//コリジョンオブジェクトを。
 	//動く床の上に設置する(キャラクターが上に乗ったら反応するようにしたいため)。
 	m_collisionObject->CreateBox(
@@ -40,7 +38,6 @@ bool MoveFloor::Start()
 		COLLISION_SIZE
 	);
 	m_collisionObject->SetIsEnableAutoDelete(false);
-
 	m_firstPosition = m_position;
 	return true;
 }
@@ -48,7 +45,7 @@ bool MoveFloor::Start()
 void MoveFloor::Update()
 {
 
-	if (m_MovingFloorState == true)
+	if (m_MoveFloorState == true)
 	{
 		m_timer += g_gameTime->GetFrameDeltaTime();
 	}
@@ -56,7 +53,6 @@ void MoveFloor::Update()
 	Move();
 
 	m_modelRender.Update();
-
 	m_physicsStaticObject.SetPosition(m_position);
 	m_collisionObject->SetPosition(m_position + COLLISION_HEIGHT);
 
@@ -98,32 +94,33 @@ void MoveFloor::Update()
 void MoveFloor::Move()
 {
 	Vector3 moveSpeed = Vector3::Zero;
-	if (m_MoveFloorState == true)
+
+	if (m_timer >= 1.0f)
 	{
+		FindGO<Game>("game")->SetMoveFloorState(true);
+		if (m_MoveFloorState == true)
+		{
 
-		if (m_MovingFloorState == enMovingFloor_Y)
-		{
-			moveSpeed.y = SPEED;
-		}
-		else if (m_MovingFloorState == enMovingFloor_Z)
-		{
-			moveSpeed.z = SPEED;
-		}
-		else if (m_MovingFloorState == enMovingFloor_None)
-		{
-			return;
-		}
+			if (m_MovingFloorState == enMovingFloor_Y)
+			{
+				moveSpeed.y = SPEED;
+			}
+			else if (m_MovingFloorState == enMovingFloor_Z)
+			{
+				moveSpeed.z = SPEED;
+			}
 
-		m_position += moveSpeed * g_gameTime->GetFrameDeltaTime();
+			m_position += moveSpeed * g_gameTime->GetFrameDeltaTime();
 
-		if (m_MovingFloorState == enMovingFloor_Y&& m_position.y >= 150.0f)
-		{
-			m_MovingFloorState = enMovingFloor_Z;
-		}
-		else if (m_MovingFloorState == enMovingFloor_Z && m_position.z >= 1100.0f)
-		{
-			m_MovingFloorState = enMovingFloor_None;
-			m_MoveFloorState = false;
+			if (m_MovingFloorState == enMovingFloor_Y && m_position.y >= 300.0f)
+			{
+				m_MovingFloorState = enMovingFloor_Z;
+			}
+			else if (m_MovingFloorState == enMovingFloor_Z && m_position.z >= 1050.0f)
+			{
+				m_MovingFloorState = enMovingFloor_None;
+				m_MoveFloorState = false;
+			}
 		}
 	}
 	m_modelRender.SetPosition(m_position);
@@ -133,36 +130,11 @@ void MoveFloor::Move()
 	{
 		//動く床の移動速度をキャラクターの移動速度に加算。
 		FindGO<Player>("player")->AddMoveSpeed(moveSpeed);
-		m_MoveFloorState = true;
-	}
-	/*
-	if (m_MovingFloorState == true && m_timer >= 1.0f)
-	{
-		if (m_MovingFloorState == true)
+		if (m_position.z <= 1050.0f)
 		{
-			moveSpeed.y = +SPEED;
+			m_MoveFloorState = true;
 		}
 	}
-
-	if (m_position.y <= -500.0f)
-	{
-		DeleteGO(this);
-	}
-
-	m_position += moveSpeed * g_gameTime->GetFrameDeltaTime();
-
-	m_modelRender.SetPosition(m_position);
-
-
-	//コリジョンオブジェクトとプレイヤーのキャラクターコントローラーが。
-	//衝突したら。(キャラクターが動く床の上に乗ったら)。
-	if (m_collisionObject->IsHit(FindGO<Player>("player")->GetCharacterController()) == true)
-	{
-		m_MovingFloorState = true;
-		//動く床の移動速度をキャラクターの移動速度に加算。
-		FindGO<Player>("player")->AddMoveSpeed(moveSpeed);
-	}
-	*/
 }
 
 void MoveFloor::Render(RenderContext& rc)

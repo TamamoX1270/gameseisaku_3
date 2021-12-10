@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 class Player;
 
@@ -43,6 +42,10 @@ public:
 	{
 		return m_MoveFloorState;
 	}
+	const Vector3& GetPosition()const
+	{
+		return m_position;
+	}
 private:
 	/// <summary>
 	/// 移動処理。
@@ -53,16 +56,16 @@ private:
 	Vector3                 m_scale;
 	Quaternion              m_rotation;
 	ModelRender				m_modelRender;
+	ModelRender             m_modelRender2;
 	Player* m_player;
 	PhysicsStaticObject		m_physicsStaticObject;	      //静的物理オブジェクト。
-	Quaternion			    rotation;					  //クォータニオン。
-
 	FontRender m_fontRender;                              //文字の描画
 	FontRender m_fontRender2;                             //文字の描画
 	FontRender m_fontRender3;                             //文字の描画
 
 	CollisionObject* m_collisionObject = nullptr;		  //コリジョンオブジェクト。
 	int		m_MoveFloorState = false;
+	int     m_createstate = false;
 
 	int foolstate = 0;
 	float m_timer = 0.0f;

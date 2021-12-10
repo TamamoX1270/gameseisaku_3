@@ -5,6 +5,7 @@ namespace nsK2EngineLow {
 	GraphicsEngine* g_graphicsEngine = nullptr;	//グラフィックスエンジン
 	Camera* g_camera2D = nullptr;				//2Dカメラ。
 	Camera* g_camera3D = nullptr;				//3Dカメラ。
+	Camera* g_camera3D2 = nullptr;				//3Dカメラ2。
 
 	GraphicsEngine::~GraphicsEngine()
 	{

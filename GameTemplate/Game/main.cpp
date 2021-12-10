@@ -5,7 +5,7 @@
 #include<dxgidebug.h>
 
 #include "Game.h"
-
+#include "Title.h"
 
 
 void ReportLiveObjects()
@@ -36,7 +36,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	//Gameクラスのオブジェクトを作成。
 	NewGO<Game>(0, "game");
-
+	//NewGO<Title>(0, "title");
 	//////////////////////////////////////
 	// 初期化を行うコードを書くのはここまで！！！
 	//////////////////////////////////////
